@@ -14,4 +14,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query(value = "SELECT * FROM products", nativeQuery = true)
     List<Product> getAllProducts();
+
+    List<Product> findByNameContainingIgnoreCase(String name);
+
+    List<Product> findByManufacturerId(Long manufacturerId);
+
+    List<Product> findByIsActive(Boolean isActive);
+
 }
