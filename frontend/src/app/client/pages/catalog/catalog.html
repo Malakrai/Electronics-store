@@ -1,0 +1,50 @@
+<div class="catalog-container">
+  <h2>Bonjour</h2>
+
+  <!-- Filtres -->
+  <div class="filters">
+    <div class="filter-group">
+      <label>Filtrer:</label>
+      <select 
+        [(ngModel)]="selectedCategory" 
+        (change)="onCategoryChange(selectedCategory)">
+        <option *ngFor="let cat of categories" [value]="cat">
+          {{ cat }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Produits -->
+  <div class="products-grid">
+    <div *ngFor="let product of filteredProducts" class="product-card">
+      <div class="product-image">
+        <img 
+          [src]="product.imageUrl || 'https://via.placeholder.com/280x200/007bff/ffffff?text=Produit'" 
+          [alt]="product.name"
+          (error)="product.imageUrl = 'https://via.placeholder.com/280x200/6c757d/ffffff?text=Image+Non+Disponible'">
+      </div>
+      <div class="product-info">
+        <h3>{{ product.name }}</h3>
+        <p class="description">{{ product.description }}</p>
+        <p class="price">{{ product.price | currency:'EUR' }}</p>
+       <!--  <p class="category">{{ product.category }}</p> -->
+      <!-- il faut que je modifie cette ligne pour que le nombre de stock sera afficher que pour l'admin et magazinier le client doit voir que si il est en stock ou pas -->
+        <p class="stock" [class.low-stock]="product.stock < 5"> 
+          {{ product.stock > 0 ? 'En stock: ' + product.stock : 'Rupture de stock' }}
+        </p>
+        <button 
+          class="btn btn-primary" 
+          [disabled]="product.stock === 0"
+          (click)="addToCart(product)">
+          {{ product.stock > 0 ? 'Ajouter au panier' : 'Indisponible' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aucun produit -->
+  <div *ngIf="filteredProducts.length === 0" class="no-products">
+    <p>Aucun produit trouvé dans la catégorie "{{ selectedCategory }}".</p>
+  </div>
+</div>

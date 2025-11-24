@@ -1,0 +1,28 @@
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.role-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.role-admin {
+  background-color: #dc3545;
+  color: white;
+}
+
+.role-magasinier {
+  background-color: #ffc107;
+  color: black;
+}
+
+.role-client {
+  background-color: #28a745;
+  color: white;
+}
