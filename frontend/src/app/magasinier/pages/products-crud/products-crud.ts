@@ -1,212 +1,114 @@
-/*import { Component, OnInit } from '@angular/core';
-import { Products } from '../../../services/products';
-import { Product } from '../../../models/product';
-import { CommonModule } from '@angular/common'; // ✅ Ajouté
-import { FormsModule } from '@angular/forms';
-
-@Component({
-  selector: 'app-products-crud',
-  imports: [CommonModule, FormsModule],
-  templateUrl: './products-crud.html',
-  styleUrl: './products-crud.css',
-})
-export class ProductsCrud implements OnInit{
-  products: Product[] = [
-    { 
-      id: 1, 
-      name: 'Produit Test', 
-      description: 'Description test', 
-      price: 100, 
-      category: 'Électronique', 
-      stock: 10}
-  ];
-  selectedProduct: Product | null = null;
-  isEditing: boolean = false;
-
-  newProduct: Product = {
-    name: '',
-    description: '',
-    price: 0,
-    category: '',
-    stock: 0,
-    imageUrl: ''
-  };
-
-  constructor(private productsService: Products) { }
-
-  ngOnInit(): void {
-    this.loadProducts();
-  }
-
-  loadProducts(): void {
-    this.productsService.getProducts().subscribe({
-      next: (data) => this.products = data,
-      error: (err) => console.error('Erreur chargement produits:', err)
-    });
-  }
-
-  createProduct(): void {
-    this.productsService.createProduct(this.newProduct).subscribe({
-      next: (product) => {
-        this.products.push(product);
-        this.resetForm();
-        alert('Produit créé avec succès !');
-      },
-      error: (err) => console.error('Erreur création:', err)
-    });
-  }
-
-  editProduct(product: Product): void {
-    this.selectedProduct = { ...product };
-    this.isEditing = true;
-  }
-
-  updateProduct(): void {
-    if (this.selectedProduct && this.selectedProduct.id) {
-      this.productsService.updateProduct(this.selectedProduct.id, this.selectedProduct).subscribe({
-        next: () => {
-          this.loadProducts();
-          this.cancelEdit();
-          alert('Produit modifié avec succès !');
-        },
-        error: (err) => console.error('Erreur modification:', err)
-      });
-    }
-  }
-
-  deleteProduct(id: number): void {
-    if (confirm('Voulez-vous vraiment supprimer ce produit ?')) {
-      this.productsService.deleteProduct(id).subscribe({
-        next: () => {
-          this.products = this.products.filter(p => p.id !== id);
-          alert('Produit supprimé !');
-        },
-        error: (err) => console.error('Erreur suppression:', err)
-      });
-    }
-  }
-
-  cancelEdit(): void {
-    this.selectedProduct = null;
-    this.isEditing = false;
-  }
-
-  resetForm(): void {
-    this.newProduct = {
-      name: '',
-      description: '',
-      price: 0,
-      category: '',
-      stock: 0,
-      imageUrl: ''
-    };
-  }
-
-}
-*/
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { NgIf, NgFor } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ProductService } from '../../../services/products'; 
 
 @Component({
   selector: 'app-products-crud',
   standalone: true,
-  imports: [CommonModule, FormsModule],  // ✅ Import des modules
+  imports: [CommonModule, FormsModule, NgIf, NgFor], 
   templateUrl: './products-crud.html',
-  styleUrl: './products-crud.css'
+  styleUrls: ['./products-crud.css']
 })
-export class ProductsCrud {
-  isEditing = false;
-  selectedProduct: any = null;
+export class ProductsCrud implements OnInit {
   products: any[] = [];
-  
-  newProduct = { 
-    name: '', 
-    description: '', 
-    price: 0, 
-    category: '', 
-    stock: 0, 
-    imageUrl: '' 
+  categories: string[] = ['Laptops', 'Phones', 'Tablets', 'Accessories','Electronique'];
+  newProduct: any = {
+     sku: '',
+  name: '',
+  description: '',
+  price: "",
+  category: '',
+  stock: "",
+  imageUrl: '',
+  status: 'active'
   };
+  selectedProduct: any = null;
+  isEditing: boolean = false;
 
-  constructor() {
-    // Données de test
-    this.products = [
-      { 
-        id: 1, 
-        name: 'Laptop Dell', 
-        description: 'Ordinateur portable haute performance', 
-        price: 999.99, 
-        category: 'Informatique', 
-        stock: 15, 
-        imageUrl: 'assets/laptop.jpg' 
+  constructor(private productService: ProductService) {} 
+
+  ngOnInit() {
+    this.loadProducts();
+  }
+
+  loadProducts() {
+    this.productService.getProducts().subscribe({
+      next: (data: any) => { 
+        this.products = data;
+        console.log('Produits chargés:', data);
       },
-      { 
-        id: 2, 
-        name: 'Smartphone Samsung', 
-        description: 'Smartphone Android dernière génération', 
-        price: 699.99, 
-        category: 'Téléphonie', 
-        stock: 25, 
-        imageUrl: 'assets/phone.jpg' 
-      }
-    ];
+      error: (error: any) => console.error('Erreur chargement:', error) 
+    });
   }
 
-  // ✅ Créer un nouveau produit
   createProduct() {
-    const product = { 
-      ...this.newProduct, 
-      id: Date.now() 
-    };
-    this.products.push(product);
-    this.resetNewProduct();
-    console.log('Produit créé:', product);
+    this.productService.createProduct(this.newProduct).subscribe({
+      next: (newProduct: any) => {
+        console.log('Produit créé dans BDD:', newProduct);
+        this.loadProducts(); 
+        this.resetForm();
+      },
+      error: (error: any) => console.error('Erreur création BDD:', error)
+    });
   }
 
-  // ✅ Éditer un produit
+  addProduct(product: any) {
+    this.productService.createProduct(product).subscribe({
+      next: (newProduct: any) => { 
+        console.log('Produit créé:', newProduct);
+        this.loadProducts();
+      },
+      error: (error: any) => console.error('Erreur création:', error) 
+    });
+  }
+
   editProduct(product: any) {
     this.selectedProduct = { ...product };
     this.isEditing = true;
   }
-
-  // ✅ Mettre à jour un produit
-  updateProduct() {
+    updateProduct() {
     if (this.selectedProduct) {
-      const index = this.products.findIndex(p => p.id === this.selectedProduct.id);
-      if (index !== -1) {
-        this.products[index] = { ...this.selectedProduct };
-      }
-      this.cancelEdit();
+      this.productService.updateProduct(this.selectedProduct.id, this.selectedProduct).subscribe({
+        next: (updatedProduct: any) => {
+          console.log('Produit modifié dans BDD:', updatedProduct);
+          this.loadProducts(); 
+          this.cancelEdit();
+        },
+        error: (error: any) => console.error('Erreur modification BDD:', error)
+      });
     }
   }
 
-  // ✅ Annuler l'édition
+  deleteProduct(product: any) {
+    if (confirm('Supprimer ce produit de la BDD ?')) {
+      this.productService.deleteProduct(product.id).subscribe({
+        next: () => {
+          console.log('Produit supprimé de la BDD');
+          this.loadProducts(); 
+        },
+        error: (error: any) => console.error('Erreur suppression BDD:', error)
+      });
+    }
+  }
+
   cancelEdit() {
     this.isEditing = false;
     this.selectedProduct = null;
   }
 
-  // ✅ Supprimer un produit
-  deleteProduct(product: any) {
-    this.products = this.products.filter(p => p.id !== product.id);
-    console.log('Produit supprimé:', product);
-  }
 
-  // ✅ Réinitialiser le formulaire
-  private resetNewProduct() {
-    this.newProduct = { 
-      name: '', 
-      description: '', 
-      price: 0, 
-      category: '', 
-      stock: 0, 
-      imageUrl: '' 
+
+
+  resetForm() {
+    this.newProduct = {
+      name: '',
+      description: '',
+      prix: "",
+      category: '',
+      stock: "",
+      imageUrl: ''
     };
-  }
-
-  // ✅ Catégories disponibles
-  get categories(): string[] {
-    return ['Informatique', 'Téléphonie', 'Électronique', 'Accessoires'];
   }
 }

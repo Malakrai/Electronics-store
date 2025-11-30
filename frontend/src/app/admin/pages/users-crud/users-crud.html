@@ -2,49 +2,57 @@
   <h2>Gestion des Utilisateurs</h2>
 
   <!-- Formulaire d'ajout -->
-  <div class="card" *ngIf="!isEditing">
-    <h3>Ajouter un nouvel utilisateur</h3>
-    <form (ngSubmit)="createUser()">
-      <div class="form-group">
-        <input type="text" [(ngModel)]="newUser.username" name="username" placeholder="Nom d'utilisateur" required>
-      </div>
-      <div class="form-group">
-        <input type="email" [(ngModel)]="newUser.email" name="email" placeholder="Email" required>
-      </div>
-      <div class="form-group">
-        <input type="password" [(ngModel)]="newUser.password" name="password" placeholder="Mot de passe" required>
-      </div>
-      <div class="form-group">
-        <select [(ngModel)]="newUser.role" name="role" required>
-          <option value="">Sélectionnez un rôle</option>
-          <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
-        </select>
-      </div>
-      <button type="submit" class="btn btn-primary">Ajouter l'utilisateur</button>
-    </form>
-  </div>
+  @if (!isEditing) {
+    <div class="card">
+      <h3>Ajouter un nouvel utilisateur</h3>
+      <form (ngSubmit)="createUser()">
+        <div class="form-group">
+          <input type="text" [(ngModel)]="newUser.username" name="username" placeholder="Nom d'utilisateur" required>
+        </div>
+        <div class="form-group">
+          <input type="email" [(ngModel)]="newUser.email" name="email" placeholder="Email" required>
+        </div>
+        <div class="form-group">
+          <input type="password" [(ngModel)]="newUser.password" name="password" placeholder="Mot de passe" required>
+        </div>
+        <div class="form-group">
+          <select [(ngModel)]="newUser.role" name="role" required>
+            <option value="">Sélectionnez un rôle</option>
+            @for (role of roles; track role) {
+              <option [value]="role">{{ role }}</option>
+            }
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter l'utilisateur</button>
+      </form>
+    </div>
+  }
 
   <!-- Formulaire d'édition -->
-  <div class="card" *ngIf="isEditing && selectedUser">
-    <h3>Modifier l'utilisateur</h3>
-    <form (ngSubmit)="updateUser()">
-      <div class="form-group">
-        <input type="text" [(ngModel)]="selectedUser.username" name="editUsername" placeholder="Nom d'utilisateur" required>
-      </div>
-      <div class="form-group">
-        <input type="email" [(ngModel)]="selectedUser.email" name="editEmail" placeholder="Email" required>
-      </div>
-      <div class="form-group">
-        <select [(ngModel)]="selectedUser.role" name="editRole" required>
-          <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
-        </select>
-      </div>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-success">Mettre à jour</button>
-        <button type="button" (click)="cancelEdit()" class="btn btn-secondary">Annuler</button>
-      </div>
-    </form>
-  </div>
+  @if (isEditing && selectedUser) {
+    <div class="card">
+      <h3>Modifier l'utilisateur</h3>
+      <form (ngSubmit)="updateUser()">
+        <div class="form-group">
+          <input type="text" [(ngModel)]="selectedUser.username" name="editUsername" placeholder="Nom d'utilisateur" required>
+        </div>
+        <div class="form-group">
+          <input type="email" [(ngModel)]="selectedUser.email" name="editEmail" placeholder="Email" required>
+        </div>
+        <div class="form-group">
+          <select [(ngModel)]="selectedUser.role" name="editRole" required>
+            @for (role of roles; track role) {
+              <option [value]="role">{{ role }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-success">Mettre à jour</button>
+          <button type="button" (click)="cancelEdit()" class="btn btn-secondary">Annuler</button>
+        </div>
+      </form>
+    </div>
+  }
 
   <!-- Liste des utilisateurs -->
   <div class="card">
@@ -60,17 +68,19 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let user of users">
-            <td>{{ user.username }}</td>
-            <td>{{ user.email }}</td>
-            <td>
-              <span [class]="'role-badge role-' + user.role">{{ user.role }}</span>
-            </td>
-            <td class="actions">
-              <button (click)="editUser(user)" class="btn btn-warning">Modifier</button>
-              <button (click)="deleteUser(user)" class="btn btn-danger">Supprimer</button>
-            </td>
-          </tr>
+          @for (user of users; track user) {
+            <tr>
+              <td>{{ user.username }}</td>
+              <td>{{ user.email }}</td>
+              <td>
+                <span [class]="'role-badge role-' + user.role">{{ user.role }}</span>
+              </td>
+              <td class="actions">
+                <button (click)="editUser(user)" class="btn btn-warning">Modifier</button>
+                <button (click)="deleteUser(user)" class="btn btn-danger">Supprimer</button>
+              </td>
+            </tr>
+          }
         </tbody>
       </table>
     </div>

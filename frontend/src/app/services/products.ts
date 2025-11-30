@@ -6,38 +6,42 @@ import { Product } from '../models/product';
 @Injectable({
   providedIn: 'root',
 })
-export class Products {
-  private apiUrl = 'http://localhost:3000/api/products';
+export class ProductService {
+
+  private apiUrl = 'http://localhost:8080/api/products';
 
   constructor(private http: HttpClient) { }
 
-  // GET tous les produits
+  // GET : récupérer tous les produits
   getProducts(): Observable<Product[]> {
     return this.http.get<Product[]>(this.apiUrl);
   }
 
-  // GET un produit par ID
+  // GET : récupérer un produit par ID
   getProductById(id: number): Observable<Product> {
     return this.http.get<Product>(`${this.apiUrl}/${id}`);
   }
 
-  // POST créer un produit
-  createProduct(product: Product): Observable<Product> {
-    return this.http.post<Product>(this.apiUrl, product);
-  }
+  // POST : créer un produit
+ createProduct(product: any): Observable<any> {
+  return this.http.post<any>(`${this.apiUrl}/add`, product);
+}
 
-  // PUT modifier un produit
-  updateProduct(id: number, product: Product): Observable<Product> {
-    return this.http.put<Product>(`${this.apiUrl}/${id}`, product);
-  }
 
-  // DELETE supprimer un produit
+  // PUT : modifier un produit
+ updateProduct(id: number, product: any) {
+  return this.http.put<any>(`${this.apiUrl}/update/${id}`, product);
+}
+
+
+  // DELETE : supprimer un produit
   deleteProduct(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  // SEARCH produits par nom ou catégorie
+  // SEARCH (uniquement si ton backend le gère)
   searchProducts(query: string): Observable<Product[]> {
     return this.http.get<Product[]>(`${this.apiUrl}/search?q=${query}`);
   }
 }
+

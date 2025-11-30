@@ -1,31 +1,21 @@
-.catalog-container {
+.catalog-page {
+  padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
 }
 
-.filters {
-  margin-bottom: 30px;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.filter-group {
+.category-filter {
+  margin: 20px 0;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.filter-group label {
-  font-weight: bold;
-}
-
-.filter-group select {
+.category-select {
   padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  background-color: white;
 }
 
 .products-grid {
@@ -36,95 +26,150 @@
 }
 
 .product-card {
-  background: white;
+  border: 1px solid #e1e5e9;
   border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  padding: 16px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .product-image {
   width: 100%;
-  height: 200px;
-  overflow: hidden;
-  border-radius: 4px;
+  height: 180px;              /* hauteur fixe */
+  object-fit: cover;          /* coupe l’image proprement */
+  border-radius: 8px;
   margin-bottom: 15px;
+  background: #f5f5f5;        /* fond gris si image absente */
+  display: block;
 }
 
-.product-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
-.product-info h3 {
-  margin: 0 0 10px 0;
+.product-card.out-of-stock {
+  opacity: 0.6;
+  background: #f8f9fa;
+}
+
+.product-card h3 {
+  margin: 0 0 8px 0;
   color: #333;
-  font-size: 18px;
+  font-size: 1.2em;
 }
 
 .description {
   color: #666;
   font-size: 14px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   line-height: 1.4;
 }
 
-.price {
-  font-size: 20px;
-  font-weight: bold;
-  color: #007bff;
-  margin: 10px 0;
+.category {
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 8px;
+  text-transform: capitalize;
 }
 
-.category {
-  background: #f8f9fa;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  display: inline-block;
-  margin-bottom: 10px;
+.price {
+  font-size: 1.3em;
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 8px;
 }
 
 .stock {
   font-size: 14px;
-  margin-bottom: 15px;
+  margin-bottom: 8px;
 }
 
 .low-stock {
-  color: #dc3545;
+  color: #ffc107;
   font-weight: bold;
 }
 
-.btn {
-  padding: 10px 20px;
+.status {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+
+.status-active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-inactive {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.status-rupture {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status-commande {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.add-to-cart-btn {
+  width: 100%;
+  padding: 12px;
+  background: #28a745;
+  color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.3s;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
 }
 
-.btn-primary { 
-  background-color: #007bff; 
-  color: white; 
+.add-to-cart-btn:hover:not(:disabled) {
+  background: #218838;
 }
 
-.btn-primary:disabled {
-  background-color: #6c757d;
+.add-to-cart-btn:disabled {
+  background: #6c757d;
   cursor: not-allowed;
 }
 
-.no-products {
+.no-results {
   text-align: center;
   padding: 40px;
   color: #666;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-size: 18px;
+}
+
+.reset-btn {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.reset-btn:hover {
+  background: #0056b3;
+}
+
+.debug-info {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+  font-size: 14px;
+  color: #666;
 }

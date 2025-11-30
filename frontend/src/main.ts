@@ -21,9 +21,14 @@ import 'zone.js';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
+import { provideHttpClient } from '@angular/common/http';
 
-import 'zone.js';
-
-bootstrapApplication(App, appConfig)
+bootstrapApplication(App, {
+  ...appConfig,
+  providers: [
+    ...(appConfig.providers || []),
+    provideHttpClient()   
+  ]
+})
 .then(() => console.log('Application Angular démarrée avec succès!'))
-  .catch(err => console.error(err));
+.catch(err => console.error(err));

@@ -18,11 +18,15 @@ public class ProductController {
 
     @PostMapping("/add")
     public Product addProduct(@RequestBody Product product) {
+
+        if (product.getSku() == null || product.getSku().isBlank()) {
+        product.setSku("SKU-" + System.currentTimeMillis());
+       }
         return productRepository.save(product);
     }
 
 
-    @GetMapping("/")
+    @GetMapping
     @ResponseBody
     public List<Product> getAllProducts() {
         return productRepository.findAll();
@@ -30,9 +34,10 @@ public class ProductController {
 
 
     @GetMapping("/search")
-    public List<Product> searchProducts(@RequestParam String name) {
-        return productRepository.findByNameContainingIgnoreCase(name);
-    }
+public List<Product> searchProducts(@RequestParam("q") String query) {
+    return productRepository.findByNameContainingIgnoreCase(query);
+}
+
 
     @PutMapping("/update/{id}")
     public Product updateProduct(@PathVariable Long id, @RequestBody Product updatedProduct) {
@@ -47,6 +52,10 @@ public class ProductController {
                     product.setWeight(updatedProduct.getWeight());
                     product.setDimensions(updatedProduct.getDimensions());
                     product.setIsActive(updatedProduct.getIsActive());
+                     product.setImageUrl(updatedProduct.getImageUrl());
+                product.setCategory(updatedProduct.getCategory());
+                product.setStock(updatedProduct.getStock());
+                product.setStatus(updatedProduct.getStatus());
                     return productRepository.save(product);
                 })
                 .orElseThrow(() -> new RuntimeException("Produit introuvable avec id: " + id));
