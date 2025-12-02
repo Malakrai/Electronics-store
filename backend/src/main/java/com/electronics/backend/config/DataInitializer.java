@@ -14,7 +14,7 @@ public class DataInitializer {
     @Bean
     CommandLineRunner initDatabase(ProductRepository productRepository) {
         return args -> {
-            if (productRepository.count() == 0) {
+           /*  if (productRepository.count() == 0) {
                 System.out.println("Insertion des produits de test");
 
                 Product p1 = new Product("SKU001", "iPhone 15", new BigDecimal("1200.00"));
@@ -36,7 +36,7 @@ public class DataInitializer {
                 System.out.println("Produits insérés avec succès !");
             } else {
                 System.out.println("Produits déjà présents dans la base, aucun ajout effectué.");
-            }
+            }*/
         };
     }
 }

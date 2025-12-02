@@ -52,10 +52,10 @@ public List<Product> searchProducts(@RequestParam("q") String query) {
                     product.setWeight(updatedProduct.getWeight());
                     product.setDimensions(updatedProduct.getDimensions());
                     product.setIsActive(updatedProduct.getIsActive());
-                     product.setImageUrl(updatedProduct.getImageUrl());
-                product.setCategory(updatedProduct.getCategory());
-                product.setStock(updatedProduct.getStock());
-                product.setStatus(updatedProduct.getStatus());
+                    product.setImageUrl(updatedProduct.getImageUrl());
+                    product.setCategory(updatedProduct.getCategory());
+                    product.setStock(updatedProduct.getStock());
+                    product.setStatus(updatedProduct.getStatus());
                     return productRepository.save(product);
                 })
                 .orElseThrow(() -> new RuntimeException("Produit introuvable avec id: " + id));

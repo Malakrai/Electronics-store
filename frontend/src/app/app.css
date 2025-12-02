@@ -1,77 +1,70 @@
+/* -----------------------------------------
+   LAYOUT GLOBAL
+----------------------------------------- */
 .app-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: #f5f7ff;
+  color: var(--text-dark);
+  font-family: "Inter", system-ui, sans-serif;
 }
 
+/* -----------------------------------------
+   HEADER TECH
+----------------------------------------- */
 .app-header {
-  background-color: #343a40;
-  color: white;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
   padding: 0;
+  box-shadow: 0 6px 20px #4f46e566;
 }
 
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.search-bar {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.search-bar input {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  width: 300px;
-}
-
-.search-bar button {
-  padding: 0.5rem 1rem;
-  background: #007bff;
+  padding: 1rem 6vw;
   color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
 }
 
 .nav-brand h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
   margin: 0;
   color: white;
+  letter-spacing: 0.5px;
 }
 
+/* NAV LINKS */
 .nav-links {
   display: flex;
-  gap: 2rem;
+  gap: 1.2rem;
 }
 
 .nav-links a {
-  color: white;
-  text-decoration: none;
+  color: #e0e7ff;
+  font-weight: 500;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+  border-radius: 12px;
+  transition: 0.25s;
 }
 
 .nav-links a:hover,
 .nav-links a.active {
-  background-color: #495057;
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  box-shadow: 0 0 12px #ffffff55;
 }
 
-.main-content {
-  flex: 1;
-  padding: 0;
-}
-
+/* -----------------------------------------
+   FOOTER TECH
+----------------------------------------- */
 .app-footer {
-  background-color: #f8f9fa;
-  text-align: center;
-  padding: 1rem;
-  border-top: 1px solid #dee2e6;
   margin-top: auto;
+  padding: 1.2rem;
+  text-align: center;
+  background: #1e1b4b;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  letter-spacing: 0.3px;
 }

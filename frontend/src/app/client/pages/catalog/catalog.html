@@ -1,7 +1,6 @@
 <div class="catalog-page">
   <h1>Notre Catalogue Électronique</h1>
 
-  <!-- Recherche avancée -->
   <app-search-box
       placeholder="Rechercher un produit électronique..."
       [showFilters]="true"
@@ -10,7 +9,6 @@
       (filtersChange)="onFiltersChange($any($event))"
   ></app-search-box>
 
-  <!-- Liste des produits -->
   <div class="products-grid">
     <div 
       *ngFor="let product of filteredProducts" 
@@ -19,12 +17,11 @@
     >
 
       <img 
-  *ngIf="product.imageUrl"
-  [src]="product.imageUrl"
-  alt="{{ product.name }}"
-  class="product-image"
-/>
-
+        *ngIf="product.imageUrl"
+        [src]="product.imageUrl"
+        alt="{{ product.name }}"
+        class="product-image"
+      />
 
       <h3>{{ product.name }}</h3>
 
@@ -54,7 +51,6 @@
     </div>
   </div>
 
-  <!-- Aucun résultat -->
   <div *ngIf="filteredProducts.length === 0" class="no-results">
     <p>Aucun produit trouvé pour votre recherche.</p>
     <button (click)="loadProducts()" class="reset-btn">Afficher tous les produits</button>

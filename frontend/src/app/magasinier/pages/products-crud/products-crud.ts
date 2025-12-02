@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../../services/products'; 
@@ -7,7 +6,7 @@ import { ProductService } from '../../../services/products';
 @Component({
   selector: 'app-products-crud',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIf, NgFor], 
+  imports: [FormsModule, CommonModule], 
   templateUrl: './products-crud.html',
   styleUrls: ['./products-crud.css']
 })
@@ -18,9 +17,9 @@ export class ProductsCrud implements OnInit {
      sku: '',
   name: '',
   description: '',
-  price: "",
+  price: 0,
   category: '',
-  stock: "",
+  stock: 0,
   imageUrl: '',
   status: 'active'
   };
@@ -103,12 +102,14 @@ export class ProductsCrud implements OnInit {
 
   resetForm() {
     this.newProduct = {
+      sku: '',
       name: '',
       description: '',
-      prix: "",
+      price: 0,
       category: '',
-      stock: "",
-      imageUrl: ''
+      stock: 0,
+      imageUrl: '',
+      status: 'active'
     };
   }
 }

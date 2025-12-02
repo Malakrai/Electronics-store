@@ -1,24 +1,33 @@
 <div class="app-container">
+
+  <!-- HEADER -->
   <header class="app-header">
     <nav class="navbar">
+
+      <!-- LOGO / BRAND -->
       <div class="nav-brand">
-       <!-- <h1>{{ title() }}</h1> --> 
-        <h1>Electronics store</h1>
+        <h1>Electronics Store</h1>
       </div>
+
+      <!-- NAV LINKS -->
       <div class="nav-links">
         <a routerLink="/catalog" routerLinkActive="active">Catalogue</a>
         <a routerLink="/search" routerLinkActive="active">Recherche</a>
         <a routerLink="/admin/users" routerLinkActive="active">Admin</a>
-        <a routerLink="/magasinier/products" routerLinkActive="active">Magasinier</a> 
+        <a routerLink="/magasinier/products" routerLinkActive="active">Magasinier</a>
       </div>
+
     </nav>
   </header>
 
+  <!-- MAIN CONTENT -->
   <main class="main-content">
     <router-outlet></router-outlet>
   </main>
 
+  <!-- FOOTER -->
   <footer class="app-footer">
-    <p>&copy; 2025  Electronics. Tous droits réservés.</p>
+    <p>&copy; 2025 Electronics Store — Tous droits réservés.</p>
   </footer>
+
 </div>

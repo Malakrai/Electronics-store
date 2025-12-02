@@ -1,57 +1,93 @@
+/* CONTAINER GÉNÉRAL */
 .search-container {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(124, 58, 237, 0.1));
+  padding: 18px;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(4px);
 }
 
+/* GROUPE INPUT + ICÔNE */
 .search-input-group {
   position: relative;
   display: flex;
   align-items: center;
 }
 
+/* BARRE DE RECHERCHE TECH */
 .search-input {
   width: 100%;
-  padding: 12px 40px 12px 16px;
-  border: 2px solid #e1e5e9;
-  border-radius: 8px;
+  padding: 14px 48px 14px 44px;
+  border: 2px solid #c7d2fe;
+  background: white;
+  border-radius: 14px;
   font-size: 16px;
-  transition: border-color 0.3s ease;
+  color: #1e1b4b;
+  transition: 0.25s ease;
+  
+  /* Icône 🔍 intégrée → AUCUN HTML à changer */
+  background-image: url("data:image/svg+xml,%3Csvg stroke='rgba(79,70,229,0.8)' fill='none' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='11' cy='11' r='7'%3E%3C/circle%3E%3Cline x1='16.65' y1='16.65' x2='21' y2='21'%3E%3C/line%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 14px center;
+  background-size: 20px;
 }
 
+.search-input::placeholder {
+  color: #6b6fb0;
+}
+
+/* FOCUS GLOW NOUVEAU STYLE */
 .search-input:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25), 0 0 12px #7c3aed66;
+  transform: translateY(-2px);
 }
 
+/* BOUTON 'X' POUR EFFACER */
 .clear-btn {
   position: absolute;
   right: 12px;
   background: none;
   border: none;
   font-size: 20px;
+  color: #7c8db5;
   cursor: pointer;
-  color: #6c757d;
-  padding: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: 0.2s;
 }
 
 .clear-btn:hover {
-  color: #495057;
+  color: #4f46e5;
+  transform: scale(1.15);
 }
 
+/* SECTION FILTRES */
 .filters-section {
-  margin-top: 12px;
+  margin-top: 14px;
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
 }
 
+/* SELECT FILTRES MODERNES */
 .filter-select {
-  padding: 8px 12px;
-  border: 1px solid #e1e5e9;
-  border-radius: 6px;
-  background-color: white;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #c7d2fe;
+  background: white;
+  color: #1e1b4b;
+  font-size: 14px;
+  transition: 0.25s ease;
+  cursor: pointer;
+}
+
+.filter-select:hover {
+  border-color: #4f46e5;
+}
+
+.filter-select:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.25);
+  outline: none;
 }
