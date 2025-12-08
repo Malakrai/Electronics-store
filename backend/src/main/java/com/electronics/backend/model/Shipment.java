@@ -45,6 +45,33 @@ public class Shipment {
     // Constructeurs, Getters, Setters
     public Shipment() {}
 
+public String getTrackingNumber() {
+    return trackingNumber;
+}
+
+public String getShippingCarrier() {
+    return shippingCarrier;
+}
+
+public String getShippingAddress() {
+    return shippingAddress;
+}
+
+public LocalDate getShipDate() {
+    return shipDate;
+}
+
+public LocalDate getEstimatedDelivery() {
+    return estimatedDelivery;
+}
+
+public LocalDate getActualDelivery() {
+    return actualDelivery;
+}
+
+public ShipmentStatus getStatus() {
+    return status;
+}
 
 
 
