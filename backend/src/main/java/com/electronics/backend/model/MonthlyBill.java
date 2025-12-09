@@ -3,47 +3,59 @@ package com.electronics.backend.model;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "monthly_bills")
 public class MonthlyBill {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id", nullable = false)
-    private Customer customer;
-
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalAmount;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal paidAmount = BigDecimal.ZERO;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private BillStatus status = BillStatus.PENDING;
-
-    @Column(nullable = false)
     private LocalDate billDate;
 
-    @Column(nullable = false)
-    private LocalDate dueDate;
+    private BigDecimal totalAmount;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Enumerated(EnumType.STRING)
+    private BillStatus status;
 
-    @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<BillItem> billItems = new HashSet<>();
+    @ManyToOne
+    private Customer customer;
 
-    // Constructeurs, Getters, Setters
+    @OneToMany(mappedBy = "monthlyBill", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BillItem> items = new ArrayList<>();
+
     public MonthlyBill() {}
 
-    public BigDecimal getRemainingBalance() {
-        return totalAmount.subtract(paidAmount);
-    }
+    // Getters / Setters
 
+    public Long getId() { return id; }
+
+    public void setId(Long id) { this.id = id; }
+
+    public LocalDate getBillDate() { return billDate; }
+
+    public void setBillDate(LocalDate billDate) { this.billDate = billDate; }
+
+    public BigDecimal getTotalAmount() { return totalAmount; }
+
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+
+    public BillStatus getStatus() { return status; }
+
+    public void setStatus(BillStatus status) { this.status = status; }
+
+    public Customer getCustomer() { return customer; }
+
+    public void setCustomer(Customer customer) { this.customer = customer; }
+
+    public List<BillItem> getItems() { return items; }
+
+    public void setItems(List<BillItem> items) { this.items = items; }
+
+    public void addItem(BillItem item) {
+        items.add(item);
+        item.setMonthlyBill(this);
+    }
 }

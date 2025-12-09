@@ -1,0 +1,199 @@
+<div class="checkout-page">
+  <header class="checkout-header">
+    <div class="brand">
+      <div class="logo-circle">E</div>
+      <div>
+        <div class="brand-name">ElectroPay</div>
+        <div class="brand-subtitle">Paiement sécurisé de vos factures</div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="link-button" (click)="loadUnpaidBills()">
+        🔄 Recharger les factures
+      </button>
+    </div>
+  </header>
+
+  <main class="checkout-main">
+    <!-- Résumé facture -->
+    <section class="card order-card">
+      <h2>Votre facture</h2>
+
+      <div *ngIf="isLoading" class="info-text">Chargement des factures...</div>
+      <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+
+      <div *ngIf="bills.length === 0 && !isLoading" class="empty-state">
+        <p>Aucune facture disponible pour le moment.</p>
+      </div>
+
+      <ng-container *ngIf="bills.length > 0 && selectedBill as bill">
+        <div class="field">
+          <label>Choisir une facture</label>
+          <select class="select" [ngModel]="bill.id" (ngModelChange)="onBillChange($event)">
+            <option *ngFor="let b of bills" [value]="b.id">
+              Facture #{{ b.id }} - {{ b.totalAmount | number: '1.2-2' }} €
+              ({{ b.customer.firstName }} {{ b.customer.lastName }})
+            </option>
+          </select>
+        </div>
+
+        <div class="bill-meta">
+          <div>
+            <div class="meta-label">Client</div>
+            <div class="meta-value">
+              {{ bill.customer.firstName }} {{ bill.customer.lastName }}
+            </div>
+            <div class="meta-small">{{ bill.customer.email }}</div>
+          </div>
+          <div>
+            <div class="meta-label">Date</div>
+            <div class="meta-value">
+              {{ bill.billDate | date: 'dd/MM/yyyy' }}
+            </div>
+          </div>
+          <div>
+            <div class="meta-label">Statut</div>
+            <span [ngClass]="getStatusChipClass(bill.status)">
+              {{ bill.status }}
+            </span>
+          </div>
+        </div>
+
+        <div class="items-table">
+          <div class="items-header">
+            <span>Article</span>
+            <span>Qté</span>
+            <span>PU</span>
+            <span>Total</span>
+          </div>
+          <div class="items-row" *ngFor="let item of bill.items">
+            <span>{{ item.description }}</span>
+            <span>{{ item.quantity }}</span>
+            <span>{{ item.unitPrice | number: '1.2-2' }} €</span>
+            <span>{{ item.lineTotal | number: '1.2-2' }} €</span>
+          </div>
+        </div>
+
+        <div class="total-line">
+          <span>Total à payer</span>
+          <span class="total-amount">{{ bill.totalAmount | number: '1.2-2' }} €</span>
+        </div>
+
+        <button class="secondary-button" (click)="openPdf(bill)">
+          📄 Télécharger la facture en PDF
+        </button>
+      </ng-container>
+    </section>
+
+    <!-- Bloc paiement -->
+    <section class="card payment-card">
+      <h2>Paiement</h2>
+
+      <ng-container *ngIf="selectedBill as bill; else noBill">
+        <div class="payment-methods">
+          <button
+            type="button"
+            class="pill"
+            [class.pill-active]="paymentMethod === 'CARD'"
+            (click)="paymentMethod = 'CARD'"
+          >
+            💳 Carte bancaire
+          </button>
+          <button
+            type="button"
+            class="pill"
+            [class.pill-active]="paymentMethod === 'PAYPAL'"
+            (click)="paymentMethod = 'PAYPAL'"
+          >
+            🅿️ PayPal
+          </button>
+          <button
+            type="button"
+            class="pill"
+            [class.pill-active]="paymentMethod === 'BANK_TRANSFER'"
+            (click)="paymentMethod = 'BANK_TRANSFER'"
+          >
+            🏦 Virement bancaire
+          </button>
+          <button
+            type="button"
+            class="pill"
+            [class.pill-active]="paymentMethod === 'CASH'"
+            (click)="paymentMethod = 'CASH'"
+          >
+            💶 Espèces
+          </button>
+        </div>
+
+        <!-- Formulaire carte -->
+        <div *ngIf="paymentMethod === 'CARD'" class="card-form">
+          <div class="field">
+            <label>Nom sur la carte</label>
+            <input class="input" type="text" placeholder="Ex : Mario Valencia" />
+          </div>
+          <div class="field">
+            <label>Numéro de carte</label>
+            <input class="input" type="text" placeholder="XXXX XXXX XXXX XXXX" />
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Expiration</label>
+              <input class="input" type="text" placeholder="MM/AA" />
+            </div>
+            <div class="field">
+              <label>CVV</label>
+              <input class="input" type="password" placeholder="***" />
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="paymentMethod === 'PAYPAL'" class="payment-info">
+          Vous serez redirigé vers PayPal pour confirmer votre paiement.
+        </div>
+        <div *ngIf="paymentMethod === 'BANK_TRANSFER'" class="payment-info">
+          Les instructions de virement bancaire s'afficheront après validation.
+        </div>
+        <div *ngIf="paymentMethod === 'CASH'" class="payment-info">
+          Ce mode est destiné à un règlement en magasin.
+        </div>
+
+        <div class="field">
+          <label>Montant à payer</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="paymentAmount"
+            class="input"
+          />
+          <small class="hint">Par défaut : montant total de la facture.</small>
+        </div>
+
+        <button
+          class="primary-button"
+          (click)="paySelectedBill()"
+          [disabled]="isPaying || bill.status === 'PAID' || bill.status === 'CANCELLED'"
+        >
+          <span *ngIf="!isPaying">
+            Payer {{ paymentAmount || bill.totalAmount | number: '1.2-2' }} €
+          </span>
+          <span *ngIf="isPaying">Traitement du paiement...</span>
+        </button>
+
+        <div *ngIf="successMessage" class="alert alert-success">
+          {{ successMessage }}
+        </div>
+        <div *ngIf="errorMessage" class="alert alert-error">
+          {{ errorMessage }}
+        </div>
+      </ng-container>
+
+      <ng-template #noBill>
+        <p class="info-text">
+          Aucune facture sélectionnée. Choisissez une facture à gauche pour procéder au paiement.
+        </p>
+      </ng-template>
+    </section>
+  </main>
+</div>

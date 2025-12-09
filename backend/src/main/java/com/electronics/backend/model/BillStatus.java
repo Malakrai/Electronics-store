@@ -1,5 +1,7 @@
 package com.electronics.backend.model;
 
 public enum BillStatus {
-    PENDING, PAID, OVERDUE
+    PENDING,   // en attente
+    PAID,      // payée
+    CANCELED   // annulée
 }

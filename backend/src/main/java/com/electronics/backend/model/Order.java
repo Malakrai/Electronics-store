@@ -37,9 +37,11 @@ public class Order {
     @Column(precision = 10, scale = 2)
     private BigDecimal shippingAmount = BigDecimal.ZERO;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payment_method_id")
+    // ⬇⬇⬇ ICI LA CORRECTION ⬇⬇⬇
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method")
     private PaymentMethod paymentMethod;
+    // ⬆⬆⬆ PLUS DE @ManyToOne NI @JoinColumn ⬆⬆⬆
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_location_id")
@@ -56,7 +58,8 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<BillItem> billItems = new HashSet<>();
 
-    // Constructeurs, Getters, Setters
+    // Constructeur par défaut
     public Order() {}
 
+    // Getters / setters (ajoute-les si ton IDE ne l'a pas déjà fait)
 }
