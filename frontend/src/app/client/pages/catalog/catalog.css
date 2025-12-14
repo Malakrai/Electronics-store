@@ -13,7 +13,11 @@
   -webkit-background-clip: text;
   color: transparent;
 }
-
+.catalog-header{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 /* GRID PRODUITS */
 .products-grid {
   display: grid;
@@ -208,4 +212,24 @@
   color: white;
   cursor: pointer;
   font-weight: 600;
+}
+
+.filters-row{
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.filters-row select{
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+  outline: none;
+}
+app-search-box{
+  width: 100%;
+  display: block;
 }

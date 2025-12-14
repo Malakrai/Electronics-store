@@ -1,14 +1,7 @@
 package com.electronics.backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "order_items")
@@ -19,39 +12,45 @@ public class OrderItem {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name="order_id", nullable = false)
     private Order order;
 
-    @Column(nullable = false)
-    private Long productId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="product_id", nullable = false)
+    private Product product;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private int quantity;
 
-    public OrderItem() {
-    }
+    @Column(name="unit_price", precision=10, scale=2)
+    private BigDecimal unitPrice;
 
-    public Order getOrder() {
-        return order;
-    }
+    @Column(name="line_total", precision=10, scale=2)
+    private BigDecimal lineTotal;
 
-    public void setOrder(Order order) {
-        this.order = order;
-    }
+    @Column(name="product_name")
+    private String productName;
 
-    public Long getProductId() {
-        return productId;
-    }
+    public OrderItem() {}
 
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
+    // GETTERS / SETTERS
+    public Long getId() { return id; }
 
-    public Integer getQuantity() {
-        return quantity;
-    }
+    public Order getOrder() { return order; }
+    public void setOrder(Order order) { this.order = order; }
 
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
+    public Product getProduct() { return product; }
+    public void setProduct(Product product) { this.product = product; }
+
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
+
+    public BigDecimal getUnitPrice() { return unitPrice; }
+    public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
+
+    public BigDecimal getLineTotal() { return lineTotal; }
+    public void setLineTotal(BigDecimal lineTotal) { this.lineTotal = lineTotal; }
+
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
 }

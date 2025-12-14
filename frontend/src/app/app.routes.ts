@@ -27,6 +27,9 @@ export const routes: Routes = [
     loadComponent: () => import('./client/pages/cart/cart').then(c => c.CartComponent)
   },
 
+  { path: 'account', redirectTo: '/catalog', pathMatch: 'full' },
+
+
   // Routes Magasinier
   { 
     path: 'magasinier/products', 

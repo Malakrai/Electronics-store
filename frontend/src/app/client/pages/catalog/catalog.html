@@ -1,22 +1,49 @@
 <div class="catalog-page">
-  <h1>Notre Catalogue Électronique</h1>
+  <div class="catalog-header">
+    <h1>Notre Catalogue Électronique</h1>
 
-  <app-search-box
+    <!-- Barre de recherche -->
+    <app-search-box
       placeholder="Rechercher un produit électronique..."
-      [showFilters]="true"
-      [showPriceFilter]="true"
-      (searchChange)="onSearch($any($event))"
-      (filtersChange)="onFiltersChange($any($event))"
-  ></app-search-box>
+      (searchChange)="onSearch($event)">
+    </app-search-box>
 
+    <!-- Filtres -->
+    <div class="filters-row">
+
+      <!-- Filtre catégorie -->
+      <select
+        [(ngModel)]="selectedCategory"
+        (change)="onFiltersChange({ category: selectedCategory, priceRange: selectedPriceRange })"
+      >
+        <option value="">Toutes les catégories</option>
+        <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+      </select>
+
+      <!-- Filtre prix -->
+      <select
+        [(ngModel)]="selectedPriceRange"
+        (change)="onFiltersChange({ category: selectedCategory, priceRange: selectedPriceRange })"
+      >
+        <option value="">Tous les prix</option>
+        <option value="0-100"> 0€ - 100€</option>
+        <option value="100-500">100€ – 500€</option>
+        <option value="500-1000">500€ – 1000€</option>
+        <option value="1000+">+ 1000€</option>
+      </select>
+
+    </div>
+  </div>
+
+  <!-- Liste des produits -->
   <div class="products-grid">
-    <div 
-      *ngFor="let product of filteredProducts" 
+    <div
+      *ngFor="let product of filteredProducts"
       class="product-card"
       [class.out-of-stock]="product.stock === 0"
     >
 
-      <img 
+      <img
         *ngIf="product.imageUrl"
         [src]="product.imageUrl"
         alt="{{ product.name }}"
@@ -24,7 +51,6 @@
       />
 
       <h3>{{ product.name }}</h3>
-
       <p class="description">{{ product.description }}</p>
 
       <p class="category">
@@ -33,7 +59,8 @@
 
       <p class="price">{{ formatPrice(product.price) }}</p>
 
-      <p class="stock" [class.low-stock]="product.stock > 0 && product.stock < 10">
+      <p class="stock"
+         [class.low-stock]="product.stock > 0 && product.stock < 10">
         Stock : {{ product.stock }}
       </p>
 
@@ -41,18 +68,28 @@
         {{ getStatusText(product.status || '') }}
       </p>
 
-      <button 
-        class="add-to-cart-btn" 
-        [disabled]="product.stock === 0"
-        (click)="addToCart(product)"
-      >
-        {{ product.stock === 0 ? 'Rupture' : 'Ajouter au panier' }}
-      </button>
+      <div class="product-actions">
+        <button
+          class="add-to-cart-btn"
+          [disabled]="product.stock === 0"
+          (click)="addToCart(product)"
+        >
+          {{ product.stock === 0 ? 'Rupture' : 'Ajouter au panier' }}
+        </button>
+
+        <button class="view-cart-btn" (click)="goToCart()">
+          Voir panier
+        </button>
+      </div>
+
     </div>
   </div>
 
+  <!-- Aucun produit -->
   <div *ngIf="filteredProducts.length === 0" class="no-results">
     <p>Aucun produit trouvé pour votre recherche.</p>
-    <button (click)="loadProducts()" class="reset-btn">Afficher tous les produits</button>
+    <button (click)="loadProducts()" class="reset-btn">
+      Afficher tous les produits
+    </button>
   </div>
 </div>

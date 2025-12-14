@@ -24,8 +24,8 @@ public class ProductBundle {
     @OneToMany(mappedBy = "bundle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<BundleItem> bundleItems = new HashSet<>();
 
-    @OneToMany(mappedBy = "bundle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<OrderItem> orderItems = new HashSet<>();
+   // @OneToMany(mappedBy = "bundle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+   // private Set<OrderItem> orderItems = new HashSet<>();
 
     // Constructeurs, Getters, Setters
     public ProductBundle() {}

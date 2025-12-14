@@ -1,59 +1,23 @@
-<div class="search-container">
-  <div class="search-input-group">
-    <input
-      type="text"
-      [placeholder]="placeholder"
-      [value]="searchTerm"
-      (input)="onSearchInput($event)"
-      class="search-input"
-    />
-    <button 
-      *ngIf="searchTerm" 
-      (click)="clearSearch()" 
-      class="clear-btn"
-      type="button"
-    >
-      ×
-    </button>
-  </div>
+<div class="search-wrap">
+  <span class="search-icon"></span>
 
-  <!-- Filtres optionnels -->
-  <div *ngIf="showFilters" class="filters-section">
-    <select 
-      (change)="onSelectChange('category', $event)"
-      class="filter-select"
-    >
-      <option value="">Toutes les catégories</option>
-     <option value="Laptops">Laptops</option>
-<option value="Phones">Téléphones</option>
-<option value="Tablets">Tablettes</option>
-<option value="Accessories">Accessoires</option>
-<option value="Electronique">Électronique</option>
+  <input
+    class="search-input"
+    type="text"
+    name="term"
+    [(ngModel)]="term"
+    [placeholder]="placeholder"
+    (input)="onTermChange()"
+    autocomplete="off"
+  />
 
-    </select>
-
-    <select 
-      (change)="onSelectChange('status', $event)"
-      class="filter-select"
-    >
-      <option value="">Tous les statuts</option>
-      <option value="active">Actif</option>
-      <option value="inactive">Inactif</option>
-      <option value="rupture">En rupture</option>
-      <option value="commande">Sur commande</option>
-    </select>
-
-    <!-- Filtre prix pour le client -->
-    <select 
-      *ngIf="showPriceFilter"
-      (change)="onSelectChange('priceRange', $event)"
-      class="filter-select"
-    >
-      <option value="">Tous les prix</option>
-      <option value="0-100">Moins de 100€</option>
-      <option value="100-500">100€ - 500€</option>
-      <option value="500-1000">500€ - 1000€</option>
-      <option value="1000+">Plus de 1000€</option>
-    </select>
-  </div>
+  <button
+    class="search-clear"
+    type="button"
+    *ngIf="term"
+    (click)="clearSearch()"
+    aria-label="Effacer"
+  >
+    ✕
+  </button>
 </div>

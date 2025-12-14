@@ -6,37 +6,31 @@ import { SearchShared } from '../../../shared/search/search';
 import { ProductService } from '../../../services/products';
 import { Product } from '../../../models/product';
 import { Search } from '../../../services/search';
-import { CartService, CartItem } from '../../../services/cart.service';
+import { CartService } from '../../../services/cart.service';
+
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchShared],
+  imports: [CommonModule, FormsModule, SearchShared ],
   templateUrl: './catalog.html',
   styleUrls: ['./catalog.css']
 })
 export class Catalog implements OnInit {
 
   categories: string[] = [
-    'Tous',
-    'ordinateurs',
-    'telephonie',
-    'composants',
-    'pieces-detachees',
-    'systemes-embarques',
-    'reseau',
-    'audio',
-    'video',
-    'gaming',
-    'connectique',
-    'alimentation',
-    'outillage',
-    'diy',
-    'stockage',
-    'peripheriques'
+    
+    'Laptops',
+    'Phones',
+    'Tablets',
+    'Accessoires',
+    'Electronique'
   ];
 
-  selectedCategory = 'Tous';
+  selectedCategory = '';
+  selectedPriceRange = ''; 
   filteredProducts: Product[] = [];
   allProducts: Product[] = [];
   currentFilters: any = {};
@@ -47,7 +41,16 @@ export class Catalog implements OnInit {
     private searchService: Search,
     private cartService: CartService,
     private router: Router
-  ) {}
+  ) {
+
+     this.cartCount$ = this.cartService.items$.pipe(
+    map(items => items.reduce((sum, i) => sum + i.quantity, 0))
+  );
+  }
+
+
+cartCount$!: Observable<number>;
+
 
   ngOnInit() {
     this.loadProducts();
@@ -58,7 +61,6 @@ export class Catalog implements OnInit {
       next: (data) => {
         this.allProducts = data;
         this.filteredProducts = data;
-        console.log('Produits chargés :', data);
       },
       error: (err) => {
         console.error('Erreur chargement produits :', err);
@@ -68,7 +70,7 @@ export class Catalog implements OnInit {
 
   onSearch(term: string) {
     this.searchTerm = term;
-    let results = this.searchService.searchProducts(term, this.allProducts);
+    const results = this.searchService.searchProducts(term, this.allProducts);
     this.filteredProducts = this.applyFilters(results);
   }
 
@@ -86,12 +88,10 @@ export class Catalog implements OnInit {
   applyFilters(products: Product[]) {
     let results = [...products];
 
-    // Filtre par catégorie
     if (this.currentFilters.category) {
       results = results.filter(p => p.category === this.currentFilters.category);
     }
 
-    // Filtre par prix
     if (this.currentFilters.priceRange) {
       results = this.filterByPriceRange(results, this.currentFilters.priceRange);
     }
@@ -101,18 +101,14 @@ export class Catalog implements OnInit {
 
   filterByPriceRange(products: Product[], priceRange: string) {
     switch (priceRange) {
-      case '0-100':
-        return products.filter(p => p.price <= 100);
-      case '100-500':
-        return products.filter(p => p.price > 100 && p.price <= 500);
-      case '500-1000':
-        return products.filter(p => p.price > 500 && p.price <= 1000);
-      case '1000+':
-        return products.filter(p => p.price > 1000);
-      default:
-        return products;
+      case '0-100': return products.filter(p => p.price <= 100);
+      case '100-500': return products.filter(p => p.price > 100 && p.price <= 500);
+      case '500-1000': return products.filter(p => p.price > 500 && p.price <= 1000);
+      case '1000+': return products.filter(p => p.price > 1000);
+      default: return products;
     }
   }
+
 
   onCategoryChange(category: string) {
     this.selectedCategory = category;
@@ -120,9 +116,7 @@ export class Catalog implements OnInit {
     if (category === 'Tous') {
       this.filteredProducts = [...this.allProducts];
     } else {
-      this.filteredProducts = this.allProducts.filter(product =>
-        product.category === category
-      );
+      this.filteredProducts = this.allProducts.filter(product => product.category === category);
     }
   }
 
@@ -133,29 +127,21 @@ export class Catalog implements OnInit {
     }).format(price);
   }
 
-  // =====================
-  // Méthode pour ajouter un produit au panier
-  // =====================
+  // ✅ Ajout panier (simple)
   addToCart(product: Product) {
-    if (!product.id) {
-      console.error('Produit invalide, pas d\'ID :', product);
-      return;
-    }
+    if (!product.id) return;
 
-    const item: CartItem = {
+    this.cartService.addItem({
       productId: product.id,
       productName: product.name,
       price: product.price,
-      quantity: 1
-    };
+      quantity: 1,
+      imageUrl: product.imageUrl
+    });
 
-    this.cartService.addItem(item);
-    alert(`${product.name} ajouté au panier !`);
+   // alert(`${product.name} ajouté au panier ✅`);
   }
 
-  // =====================
-  // Méthode pour naviguer vers la page panier
-  // =====================
   goToCart() {
     this.router.navigate(['/cart']);
   }
@@ -190,5 +176,4 @@ export class Catalog implements OnInit {
     };
     return categoryMap[category] || category;
   }
-
 }
