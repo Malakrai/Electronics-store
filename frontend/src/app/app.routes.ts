@@ -2,14 +2,14 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/catalog', pathMatch: 'full' },
-  
-  // ✅ Routes Admin
+
+  // Routes Admin
   { 
     path: 'admin/users', 
     loadComponent: () => import('./admin/pages/users-crud/users-crud').then(c => c.UsersAdmin)
   },
-  
-  // ✅ Routes Client
+
+  // Routes Client
   { 
     path: 'catalog', 
     loadComponent: () => import('./client/pages/catalog/catalog').then(c => c.Catalog)
@@ -22,20 +22,24 @@ export const routes: Routes = [
     path: 'product/:id', 
     loadComponent: () => import('./client/pages/product-details/product-details').then(c => c.ProductDetails) 
   },
-  
-  // ✅ Routes Magasinier
+  { 
+    path: 'cart', 
+    loadComponent: () => import('./client/pages/cart/cart').then(c => c.CartComponent)
+  },
+
+  // Routes Magasinier
   { 
     path: 'magasinier/products', 
     loadComponent: () => import('./magasinier/pages/products-crud/products-crud').then(c => c.ProductsCrud) 
   },
-  
-  // ✅ Route pour /admin simple
+
+  // Route pour /admin simple
   { 
     path: 'admin', 
     redirectTo: 'admin/users', 
     pathMatch: 'full' 
   },
-  
-  // ✅ Route 404
+
+  // Route 404
   { path: '**', redirectTo: '/catalog' }
 ];

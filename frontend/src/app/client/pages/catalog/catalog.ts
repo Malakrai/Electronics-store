@@ -1,24 +1,26 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SearchShared} from '../../../shared/search/search';
-import { ProductService} from '../../../services/products';
-import { Product} from '../../../models/product';
+import { Router } from '@angular/router';
+import { SearchShared } from '../../../shared/search/search';
+import { ProductService } from '../../../services/products';
+import { Product } from '../../../models/product';
 import { Search } from '../../../services/search';
+import { CartService, CartItem } from '../../../services/cart.service';
 
 @Component({
   selector: 'app-catalog',
   standalone: true,
   imports: [CommonModule, FormsModule, SearchShared],
   templateUrl: './catalog.html',
-  styleUrl: './catalog.css'
+  styleUrls: ['./catalog.css']
 })
 export class Catalog implements OnInit {
-  
+
   categories: string[] = [
     'Tous',
     'ordinateurs',
-    'telephonie', 
+    'telephonie',
     'composants',
     'pieces-detachees',
     'systemes-embarques',
@@ -33,36 +35,36 @@ export class Catalog implements OnInit {
     'stockage',
     'peripheriques'
   ];
-  
+
   selectedCategory = 'Tous';
-  filteredProducts: Product[] = []; 
-  allProducts: Product[] = []; 
+  filteredProducts: Product[] = [];
+  allProducts: Product[] = [];
   currentFilters: any = {};
   searchTerm: string = '';
 
   constructor(
     private productService: ProductService,
     private searchService: Search,
-    
+    private cartService: CartService,
+    private router: Router
   ) {}
 
   ngOnInit() {
     this.loadProducts();
   }
 
-loadProducts() {
-  this.productService.getProducts().subscribe({
-    next: (data) => {
-      this.allProducts = data;
-      this.filteredProducts = data;
-      console.log('Produits chargés :', data);
-    },
-    error: (err) => {
-      console.error('Erreur chargement produits :', err);
-    }
-  });
-}
-
+  loadProducts() {
+    this.productService.getProducts().subscribe({
+      next: (data) => {
+        this.allProducts = data;
+        this.filteredProducts = data;
+        console.log('Produits chargés :', data);
+      },
+      error: (err) => {
+        console.error('Erreur chargement produits :', err);
+      }
+    });
+  }
 
   onSearch(term: string) {
     this.searchTerm = term;
@@ -81,24 +83,23 @@ loadProducts() {
     this.filteredProducts = results;
   }
 
-  applyFilters(products: Product[]) { 
+  applyFilters(products: Product[]) {
     let results = [...products];
-    
+
     // Filtre par catégorie
     if (this.currentFilters.category) {
       results = results.filter(p => p.category === this.currentFilters.category);
     }
-    
-   
+
     // Filtre par prix
     if (this.currentFilters.priceRange) {
       results = this.filterByPriceRange(results, this.currentFilters.priceRange);
     }
-    
+
     return results;
   }
 
-  filterByPriceRange(products: Product[], priceRange: string) { // Correction: Product[]
+  filterByPriceRange(products: Product[], priceRange: string) {
     switch (priceRange) {
       case '0-100':
         return products.filter(p => p.price <= 100);
@@ -113,35 +114,56 @@ loadProducts() {
     }
   }
 
-  // Ancienne méthode de filtrage simple (optionnelle)
   onCategoryChange(category: string) {
     this.selectedCategory = category;
-    
+
     if (category === 'Tous') {
       this.filteredProducts = [...this.allProducts];
     } else {
-      this.filteredProducts = this.allProducts.filter(product => 
+      this.filteredProducts = this.allProducts.filter(product =>
         product.category === category
       );
     }
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('fr-FR', { 
-      style: 'currency', 
-      currency: 'EUR' 
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'EUR'
     }).format(price);
   }
-  
-  addToCart(product: Product) { // Correction: Product
-    console.log('Produit ajouté au panier:', product);
-    alert(`${product.name} ajouté au panier!`);
+
+  // =====================
+  // Méthode pour ajouter un produit au panier
+  // =====================
+  addToCart(product: Product) {
+    if (!product.id) {
+      console.error('Produit invalide, pas d\'ID :', product);
+      return;
+    }
+
+    const item: CartItem = {
+      productId: product.id,
+      productName: product.name,
+      price: product.price,
+      quantity: 1
+    };
+
+    this.cartService.addItem(item);
+    alert(`${product.name} ajouté au panier !`);
+  }
+
+  // =====================
+  // Méthode pour naviguer vers la page panier
+  // =====================
+  goToCart() {
+    this.router.navigate(['/cart']);
   }
 
   getStatusText(status: string): string {
     const statusMap: { [key: string]: string } = {
       'active': 'En stock',
-      'inactive': 'Inactif', 
+      'inactive': 'Inactif',
       'rupture': 'Rupture de stock',
       'commande': 'Sur commande'
     };
@@ -168,4 +190,5 @@ loadProducts() {
     };
     return categoryMap[category] || category;
   }
+
 }
