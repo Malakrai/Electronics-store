@@ -1,0 +1,120 @@
+/* Container général */
+.profile-container {
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  text-align: center;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Titre */
+.title {
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* Message */
+.message {
+  margin-bottom: 15px;
+  color: green;
+  font-weight: 500;
+}
+
+/* Bouton retour */
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: #f0f0f0;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background-color: #e0e0e0;
+}
+
+/* Section image */
+.profile-image-section {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.profile-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #4a90e2;
+  margin-bottom: 10px;
+}
+
+.file-input {
+  display: block;
+  margin: 0 auto;
+  cursor: pointer;
+}
+
+/* Formulaire */
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  text-align: left;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #555;
+}
+
+.form-group input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+  border-color: #4a90e2;
+  outline: none;
+}
+
+/* Bouton enregistrer */
+.save-btn {
+  margin-top: 10px;
+  padding: 12px;
+  background-color: #4a90e2;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-btn:disabled {
+  background-color: #a0c4f7;
+  cursor: not-allowed;
+}
+
+.save-btn:hover:not(:disabled) {
+  background-color: #357ab8;
+}
