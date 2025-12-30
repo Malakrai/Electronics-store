@@ -42,6 +42,15 @@ public class Product {
 
 
 
+    private String imageUrl;
+
+    private String category;
+
+    private Integer stock;
+
+    private String status; // active, inactive, rupture, commande
+
+
     public Product() {}
 
     public Product(String sku, String name, BigDecimal price) {
@@ -50,7 +59,9 @@ public class Product {
         this.price = price;
     }
 
-    // Getters et Setters
+
+    // GETTERS + SETTERS
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -83,4 +94,19 @@ public class Product {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+
+    // 🆕 GETTERS / SETTERS DES CHAMPS AJOUTÉS
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }
