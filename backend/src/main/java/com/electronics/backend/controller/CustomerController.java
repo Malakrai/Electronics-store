@@ -1,14 +1,18 @@
 package com.electronics.backend.controller;
 
 import com.electronics.backend.model.Customer;
+import com.electronics.backend.model.User;
 import com.electronics.backend.repository.CustomerRepository;
+import com.electronics.backend.repository.UserRepository;
+import com.electronics.backend.utils.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.List;
+import java.io.Serializable;
+import java.nio.file.*;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/customer")
@@ -16,74 +20,100 @@ import java.util.Optional;
 public class CustomerController {
 
     private final CustomerRepository customerRepository;
+    private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
-    public CustomerController(CustomerRepository customerRepository) {
+    public CustomerController(CustomerRepository customerRepository,
+                              UserRepository userRepository,
+                              JwtUtil jwtUtil) {
         this.customerRepository = customerRepository;
+        this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
+    }
+
+    private String getEmail(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header == null || !header.startsWith("Bearer ")) {
+            throw new RuntimeException("Invalid Authorization header");
+        }
+        return jwtUtil.extractUsername(header.substring(7));
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<?> getCustomerProfile() {
+    public ResponseEntity<?> getProfile(HttpServletRequest request) {
         try {
-            return ResponseEntity.ok(Map.of("message", "Customer profile endpoint"));
+            String email = getEmail(request);
+
+            Customer c = (Customer) userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            ResponseEntity<Map<String, ? extends Serializable>> ok = ResponseEntity.ok(Map.of(
+                    "id", c.getId(),
+                    "email", c.getEmail(),
+                    "firstName", c.getFirstName(),
+                    "lastName", c.getLastName(),
+                    "phone", c.getPhone() != null ? c.getPhone() : "",
+                    "address", c.getAddress() != null ? c.getAddress() : "",
+                    "profileImage", c.getProfileImage() != null ? c.getProfileImage() : ""
+            ));
+            return ok;
         } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    @GetMapping("/orders")
-    public ResponseEntity<?> getCustomerOrders() {
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
+
         try {
-            return ResponseEntity.ok(Map.of("message", "Customer orders endpoint"));
+            String email = getEmail(request);
+
+            Customer c = (Customer) userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            c.setFirstName(body.get("firstName"));
+            c.setLastName(body.get("lastName"));
+            c.setPhone(body.get("phone"));
+            c.setAddress(body.get("address"));
+
+            customerRepository.save(c);
+
+            return ResponseEntity.ok(Map.of("message", "Profile updated"));
         } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    @GetMapping("/dashboard")
-    public ResponseEntity<?> getCustomerDashboard() {
+    @PostMapping("/profile/image")
+    public ResponseEntity<?> uploadImage(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest request) {
+
         try {
+            String email = getEmail(request);
+
+            Customer c = (Customer) userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            String dir = "uploads/customers/";
+            Files.createDirectories(Paths.get(dir));
+
+            String filename = c.getId() + "_" + file.getOriginalFilename();
+            Path path = Paths.get(dir + filename);
+
+            Files.write(path, file.getBytes());
+
+            c.setProfileImage("customers/" + filename);
+            customerRepository.save(c);
+
             return ResponseEntity.ok(Map.of(
-                    "message", "Welcome to Customer Dashboard",
-                    "features", List.of("View Products", "Place Orders", "Track Orders")
+                    "message", "Image uploaded",
+                    "image", "customers/" + filename
             ));
         } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
-    }
-
-    @GetMapping("/all")
-    public ResponseEntity<?> getAllCustomers() {
-        try {
-            List<Customer> customers = customerRepository.findAll();
-            return ResponseEntity.ok(customers);
-        } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getCustomerById(@PathVariable Long id) {
-        try {
-            Optional<Customer> customer = customerRepository.findById(id);
-            if (customer.isPresent()) {
-                return ResponseEntity.ok(customer.get());
-            } else {
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Customer not found");
-                return ResponseEntity.badRequest().body(errorResponse);
-            }
-        } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

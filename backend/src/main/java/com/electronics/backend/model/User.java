@@ -22,7 +22,12 @@ public abstract class User {
     private String firstName;
     private String lastName;
     private String phone;
+    private String address;
+
     private Boolean enabled = true;
+
+    @Column(name = "profile_image")
+    private String profileImage;
 
     @Column(name = "google_auth_enabled")
     private Boolean googleAuthEnabled = false;
@@ -30,33 +35,37 @@ public abstract class User {
     @Column(name = "google_auth_secret")
     private String googleAuthSecret;
 
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    public User() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    // Getters et Setters
+    // Getters & Setters
     public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
+
     public String getLastName() { return lastName; }
     public void setLastName(String lastName) { this.lastName = lastName; }
+
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
-    public Boolean getEnabled() { return enabled; }
+
+    public String getAddress() { return address; } // ajouté
+    public void setAddress(String address) { this.address = address; } // ajouté
+
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
-    public Boolean getGoogleAuthEnabled() { return googleAuthEnabled; }
+
+    public String getProfileImage() { return profileImage; }
+    public void setProfileImage(String profileImage) { this.profileImage = profileImage; }
+
     public void setGoogleAuthEnabled(Boolean googleAuthEnabled) { this.googleAuthEnabled = googleAuthEnabled; }
+
     public String getGoogleAuthSecret() { return googleAuthSecret; }
     public void setGoogleAuthSecret(String googleAuthSecret) { this.googleAuthSecret = googleAuthSecret; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public boolean isEnabled() { return enabled != null ? enabled : true; }
     public boolean isGoogleAuthEnabled() { return googleAuthEnabled != null ? googleAuthEnabled : false; }
