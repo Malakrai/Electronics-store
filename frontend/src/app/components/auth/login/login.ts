@@ -329,7 +329,7 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/magasinier/dashboard']);
         break;
       case 'CUSTOMER':
-        this.router.navigate(['/customer/dashboard']);
+        this.router.navigate(['/customer/catalog']);
         break;
       default:
         this.router.navigate(['/dashboard']);

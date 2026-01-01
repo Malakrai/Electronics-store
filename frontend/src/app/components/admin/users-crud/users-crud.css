@@ -1,0 +1,66 @@
+.container { max-width: 1200px; margin: auto; padding: 25px; }
+
+h2 {
+  font-size: 2rem;
+  background: linear-gradient(135deg,#06b6d4,#4f46e5);
+  -webkit-background-clip: text;
+  color: transparent;
+  margin-bottom: 25px;
+}
+
+/* CARD */
+.card {
+  background: white;
+  padding: 22px;
+  border-radius: 18px;
+  border: 1px solid #bae6fd;
+  box-shadow: 0 8px 25px #06b6d422;
+  margin-bottom: 25px;
+  transition: 0.25s;
+}
+
+.card:hover {
+  box-shadow: 0 12px 30px #06b6d455;
+}
+
+/* FORM INPUTS */
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #93c5fd;
+  background: #f0f9ff;
+  transition: 0.2s;
+}
+
+.form-group input:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 10px #06b6d455;
+}
+
+/* TABLE */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+th {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 14px;
+  font-weight: 700;
+}
+
+td {
+  padding: 14px;
+  border-bottom: 1px solid #bae6fd;
+}
+
+/* BADGES */
+.status-active { background:#d1fae5; color:#047857; }
+.status-inactive { background:#ffe4e6; color:#be123c; }
+
+/* ACTION BUTTONS */
+.actions { display: flex; gap: 8px; }

@@ -18,10 +18,10 @@ export class AuthService {
 
   // Méthode principale pour /api/auth/login
   login(data: LoginRequest): Observable<any> {
-    console.log('🔄 AuthService: Appel à /login avec:', data.email);
+    console.log(' AuthService: Appel à /login avec:', data.email);
     return this.http.post<any>(`${this.apiUrl}/login`, data).pipe(
       tap(res => {
-        console.log('✅ AuthService: Réponse login reçue:', res);
+        console.log(' AuthService: Réponse login reçue:', res);
 
         // Stocker le token si la connexion est réussie (sans 2FA)
         if (!res.requires2fa && (res.jwtToken || res.token)) {
@@ -29,7 +29,7 @@ export class AuthService {
         }
       }),
       catchError(error => {
-        console.error('❌ AuthService: Erreur login:', error);
+        console.error(' AuthService: Erreur login:', error);
         return throwError(() => error);
       })
     );
@@ -37,17 +37,17 @@ export class AuthService {
 
   // Vérification 2FA pour admin
   verifyAdmin2FA(email: string, password: string, totpCode: string): Observable<any> {
-    console.log('🔄 AuthService: Vérification 2FA pour:', email);
+    console.log(' AuthService: Vérification 2FA pour:', email);
     const request = { email, password, totpCode };
     return this.http.post<any>(`${this.apiUrl}/admin/verify-2fa`, request).pipe(
       tap(res => {
-        console.log('✅ AuthService: Réponse vérification 2FA:', res);
+        console.log(' AuthService: Réponse vérification 2FA:', res);
         if (res.jwtToken) {
           this.handleLoginSuccess(res);
         }
       }),
       catchError(error => {
-        console.error('❌ AuthService: Erreur vérification 2FA:', error);
+        console.error(' AuthService: Erreur vérification 2FA:', error);
         return throwError(() => error);
       })
     );
@@ -55,18 +55,18 @@ export class AuthService {
 
   // Récupérer le QR code admin (si nécessaire)
   getAdminQRCode(email: string, password: string): Observable<any> {
-    console.log('🔄 AuthService: Demande QR code pour:', email);
+    console.log(' AuthService: Demande QR code pour:', email);
     const request = { email, password };
     return this.http.post<any>(`${this.apiUrl}/admin/qrcode`, request).pipe(
-      tap(res => console.log('✅ AuthService: QR code reçu')),
+      tap(res => console.log(' AuthService: QR code reçu')),
       catchError(error => {
-        console.error('❌ AuthService: Erreur QR code:', error);
+        console.error(' AuthService: Erreur QR code:', error);
         return throwError(() => error);
       })
     );
   }
 
-  // Méthodes de gestion de session
+
   handleLoginSuccess(res: any) {
     if (isPlatformBrowser(this.platformId)) {
       const token = res.jwtToken || res.token;
@@ -80,7 +80,7 @@ export class AuthService {
           userId: res.userId,
           roles: res.roles || []
         }));
-        console.log('✅ AuthService: Session stockée avec succès');
+        console.log(' AuthService: Session stockée avec succès');
       }
     }
   }
@@ -116,7 +116,7 @@ export class AuthService {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      console.log('👋 AuthService: Déconnexion effectuée');
+      console.log(' AuthService: Déconnexion effectuée');
     }
   }
 
@@ -128,4 +128,33 @@ export class AuthService {
     }
     return this.http.post<any>(`${this.apiUrl}/validate-token`, { token });
   }
+  getUserRole(): string | null {
+    const user = this.getCurrentUser();
+    if (!user) return null;
+
+    // Cas 1 : roles = ["CUSTOMER"]
+    if (user.roles && user.roles.length > 0) {
+      return user.roles[0];
+    }
+
+    // Cas 2 : userType = "CUSTOMER"
+    if ((user as any).userType) {
+      return (user as any).userType;
+    }
+
+    return null;
+  }
+
+  isCustomer(): boolean {
+    return this.getUserRole() === 'CUSTOMER';
+  }
+
+  isAdmin(): boolean {
+    return this.getUserRole() === 'ADMIN';
+  }
+
+  isMagasinier(): boolean {
+    return this.getUserRole() === 'MAGASINIER';
+  }
+
 }

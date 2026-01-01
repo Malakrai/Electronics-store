@@ -1,5 +1,6 @@
 package com.electronics.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -13,6 +14,7 @@ public class OrderItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="order_id", nullable = false)
+    @JsonBackReference
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -33,7 +35,8 @@ public class OrderItem {
 
     public OrderItem() {}
 
-    // GETTERS / SETTERS
+    // ---------------- GETTERS / SETTERS ----------------
+
     public Long getId() { return id; }
 
     public Order getOrder() { return order; }

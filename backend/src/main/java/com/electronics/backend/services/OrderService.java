@@ -1,4 +1,4 @@
-package com.electronics.backend.service;
+package com.electronics.backend.services;
 
 import com.electronics.backend.dto.CheckoutRequest;
 import com.electronics.backend.model.Order;

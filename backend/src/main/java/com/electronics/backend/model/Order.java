@@ -1,5 +1,7 @@
 package com.electronics.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -18,15 +20,14 @@ public class Order {
     @Column(name="order_number", unique = true, nullable = false)
     private String orderNumber;
 
-    // Garde le mapping pour compatibilité avec le code du groupe,
-    // mais on n’oblige PAS à fournir un customer
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id") // doit être nullable côté DB si panier sans login
+    @JoinColumn(name = "customer_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Customer customer;
 
-    // Pareil
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_location_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Location storeLocation;
 
     @Enumerated(EnumType.STRING)
@@ -35,7 +36,7 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private OrderStatus status = OrderStatus.CONFIRMED; // ⚠️ adapte à ton enum DB
+    private OrderStatus status = OrderStatus.CONFIRMED;
 
     @Column(name="total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount = BigDecimal.ZERO;
@@ -46,7 +47,6 @@ public class Order {
     @Column(name="shipping_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal shippingAmount = BigDecimal.ZERO;
 
-    // ✅ IMPORTANT: colonne NOT NULL sans default → on la gère
     @Column(name="total_cents", nullable = false)
     private Long totalCents = 0L;
 
@@ -63,6 +63,7 @@ public class Order {
     private LocalDateTime orderDate;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private Set<OrderItem> orderItems = new HashSet<>();
 
     public Order() {}
@@ -72,7 +73,6 @@ public class Order {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (orderDate == null) orderDate = LocalDateTime.now();
 
-        // sécurise totalAmount / totalCents
         if (totalAmount == null) totalAmount = BigDecimal.ZERO;
         if (taxAmount == null) taxAmount = BigDecimal.ZERO;
         if (shippingAmount == null) shippingAmount = BigDecimal.ZERO;
@@ -84,7 +84,6 @@ public class Order {
         this.orderItems.add(item);
     }
 
-    // ✅ calcule totalCents depuis totalAmount
     public void computeTotalCentsFromTotalAmount() {
         if (this.totalAmount == null) {
             this.totalCents = 0L;
@@ -96,7 +95,8 @@ public class Order {
                 .longValue();
     }
 
-    // GETTERS / SETTERS
+    // ---------------- GETTERS / SETTERS ----------------
+
     public Long getId() { return id; }
 
     public String getOrderNumber() { return orderNumber; }

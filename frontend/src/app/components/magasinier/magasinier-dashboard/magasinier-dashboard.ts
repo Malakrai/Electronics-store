@@ -35,7 +35,7 @@ export class MagasinierDashboard implements OnInit {
   }
 
   manageInventory(): void {
-    console.log('Navigate to inventory management');
+    this.router.navigate(['/magasinier/products']);
   }
 
   processOrders(): void {
