@@ -1,0 +1,58 @@
+<div class="container">
+  <h2>Gestion des Utilisateurs</h2>
+
+  <div class="card">
+    <h3>{{ isEditing ? 'Modifier l\'utilisateur' : 'Ajouter un nouvel utilisateur' }}</h3>
+    <form (ngSubmit)="isEditing ? updateUser() : createUser()">
+      <div class="form-group">
+        <input type="text" [(ngModel)]="currentUser.firstName" name="firstName" placeholder="Prénom" required>
+      </div>
+      <div class="form-group">
+        <input type="text" [(ngModel)]="currentUser.lastName" name="lastName" placeholder="Nom" required>
+      </div>
+      <div class="form-group">
+        <input type="email" [(ngModel)]="currentUser.email" name="email" placeholder="Email" required>
+      </div>
+      <div class="form-group" *ngIf="!isEditing">
+        <input type="password" [(ngModel)]="currentUser.password" name="password" placeholder="Mot de passe" required>
+      </div>
+      <div class="form-group">
+        <select [(ngModel)]="currentUser.role" name="role" required>
+          <option value="">Sélectionnez un rôle</option>
+          <option *ngFor="let role of roles" [value]="role">{{ role | titlecase }}</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Ajouter' }}</button>
+        <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelEdit()">Annuler</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card mt-3">
+    <h3>Liste des utilisateurs ({{ users.length }})</h3>
+    <table class="table table-bordered">
+      <thead>
+      <tr>
+        <th>Prénom</th>
+        <th>Nom</th>
+        <th>Email</th>
+        <th>Rôle</th>
+        <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let user of users">
+        <td>{{ user.firstName }}</td>
+        <td>{{ user.lastName }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.role | titlecase }}</td>
+        <td>
+          <button class="btn btn-warning" (click)="editUser(user)">Modifier</button>
+          <button class="btn btn-danger" (click)="deleteUser(user)">Supprimer</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

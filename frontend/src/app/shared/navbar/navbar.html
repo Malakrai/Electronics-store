@@ -1,0 +1,17 @@
+<header class="topbar">
+  <div class="brand" routerLink="/catalog">Electronics Store</div>
+
+  <nav class="links">
+    <a routerLink="/search" routerLinkActive="active">Recherche</a>
+
+    <a routerLink="/cart" routerLinkActive="active" class="cart-link">
+      Panier
+      <span class="badge" *ngIf="(cartCount$ | async) as c" [class.hidden]="c === 0">
+        {{ c }}
+      </span>
+    </a>
+
+    <!-- Compte : même si la page n'existe pas encore -->
+    <a routerLink="/account" routerLinkActive="active">Compte</a>
+  </nav>
+</header>

@@ -17,7 +17,7 @@ public class ProductCategory {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    // Constructeurs, Getters, Setters
+    
     public ProductCategory() {}
 
     public ProductCategory(Product product, Category category) {

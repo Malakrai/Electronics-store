@@ -1,0 +1,84 @@
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="header-left">
+          <h1>Espace Administrateur</h1>
+          <p>Gestion complète de la plateforme</p>
+        </div>
+        <div class="header-right">
+          <div class="user-info">
+            <span>Bienvenue, <strong>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</strong></span>
+            <button (click)="logout()" class="btn btn-outline">Déconnexion</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <div class="container">
+      <!-- Statistiques -->
+      <section class="stats-section">
+        <h2>📊 Tableau de Bord</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <h3>Utilisateurs Total</h3>
+            <p class="stat-number">{{ isLoading ? '...' : stats.totalUsers }}</p>
+            <p class="stat-label">{{ stats.activeUsers }} actifs</p>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <h3>Produits</h3>
+            <p class="stat-number">{{ isLoading ? '...' : stats.totalProducts }}</p>
+            <p class="stat-label">En catalogue</p>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🛒</div>
+            <h3>Commandes</h3>
+            <p class="stat-number">{{ isLoading ? '...' : stats.totalOrders }}</p>
+            <p class="stat-label">Ce mois</p>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💼</div>
+            <h3>Votre Rôle</h3>
+            <p class="stat-number">ADMIN</p>
+            <p class="stat-label">Accès complet</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Actions Rapides -->
+      <section class="actions-section">
+        <h2>🚀 Actions Rapides</h2>
+        <div class="actions-grid">
+          <div class="action-card" (click)="goToUsersCrud()">
+            <div class="action-icon">👥</div>
+            <h4>Gestion Utilisateurs</h4>
+            <p>Gérer les comptes utilisateurs et permissions</p>
+            <button class="btn btn-primary">Accéder</button>
+          </div>
+          <div class="action-card" (click)="manageProducts()">
+            <div class="action-icon">📦</div>
+            <h4>Gestion Produits</h4>
+            <p>Gérer le catalogue produits et stocks</p>
+            <button class="btn btn-primary">Accéder</button>
+          </div>
+          <div class="action-card">
+            <div class="action-icon">📊</div>
+            <h4>Rapports</h4>
+            <p>Consulter les statistiques et analyses</p>
+            <button class="btn btn-primary">Accéder</button>
+          </div>
+          <div class="action-card">
+            <div class="action-icon">⚙️</div>
+            <h4>Paramètres</h4>
+            <p>Configurer la plateforme</p>
+            <button class="btn btn-primary">Accéder</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>

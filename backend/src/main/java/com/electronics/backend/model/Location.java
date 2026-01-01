@@ -36,9 +36,9 @@ public class Location {
     @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Inventory> inventories = new HashSet<>();
 
-    @OneToMany(mappedBy = "storeLocation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  /*  @OneToMany(mappedBy = "storeLocation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Order> orders = new HashSet<>();
-
+*/
     @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<InventoryReceipt> inventoryReceipts = new HashSet<>();
 

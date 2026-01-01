@@ -1,0 +1,64 @@
+.search-wrap{
+  width: 100%;
+  max-width: 700px;
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 16px 18px;
+  border-radius: 16px;
+
+  background: #eef3ff;              /* même ambiance que ton form */
+  border: 1px solid #b9c8ff;        /* bleu clair */
+  box-shadow: 0 10px 26px rgba(67, 56, 202, 0.10); /* ombre violette douce */
+}
+
+.search-icon{
+  font-size: 18px;
+  opacity: 0.75;
+  user-select: none;
+}
+
+.search-input{
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+
+  font-size: 16px;
+  color: #111827;
+}
+
+.search-input::placeholder{
+  color: #6b7280;
+}
+
+.search-clear{
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+
+  border: 1px solid rgba(185, 200, 255, 0.9);
+  background: rgba(255,255,255,0.6);
+
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+
+  opacity: 0.8;
+  transition: transform .15s ease, opacity .15s ease, background .15s ease;
+}
+
+.search-clear:hover{
+  opacity: 1;
+  transform: scale(1.03);
+  background: rgba(255,255,255,0.9);
+}
+
+/* focus comme ton UI */
+.search-wrap:focus-within{
+  border-color: #6d28d9;            /* violet */
+  box-shadow: 0 0 0 4px rgba(109, 40, 217, 0.18);
+}

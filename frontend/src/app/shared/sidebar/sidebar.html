@@ -1,0 +1,23 @@
+
+<!-- OVERLAY -->
+<div class="overlay" *ngIf="isOpen" (click)="close()"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" [class.open]="isOpen">
+
+  <h3>Menu</h3>
+
+  <!-- NON CONNECTÉ -->
+  <ng-container *ngIf="!isAuthenticated()">
+    <button (click)="goTo('/login')">🔐 Se connecter</button>
+    <button (click)="goTo('/register')">📝 Créer un compte</button>
+  </ng-container>
+
+  <!-- CUSTOMER CONNECTÉ -->
+  <ng-container *ngIf="isAuthenticated() && isCustomer()">
+    <button (click)="goTo('/customer/profile')">👤 Profil</button>
+    <button (click)="goTo('/customer/orders')">📦 Mes commandes</button>
+    <button class="danger" (click)="logout()">🚪 Déconnexion</button>
+  </ng-container>
+
+</div>

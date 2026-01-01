@@ -1,0 +1,103 @@
+<!-- Bouton pour ouvrir le sidebar -->
+<button class="open-sidebar-btn" (click)="openSidebar()">☰ Menu</button>
+
+<app-sidebar></app-sidebar>
+
+<!-- Bouton login dans le header si tu veux un bouton séparé -->
+<button class="login-btn" (click)="goLogin()">Se connecter</button>
+
+<div class="catalog-page">
+  <div class="catalog-header">
+    <h1>Notre Catalogue Électronique</h1>
+
+    <!-- Barre de recherche -->
+    <app-search-box
+      placeholder="Rechercher un produit électronique..."
+      (searchChange)="onSearch($event)">
+    </app-search-box>
+
+    <!-- Filtres -->
+    <div class="filters-row">
+
+      <!-- Filtre catégorie -->
+      <select
+        [(ngModel)]="selectedCategory"
+        (change)="onFiltersChange({ category: selectedCategory, priceRange: selectedPriceRange })"
+      >
+        <option value="">Toutes les catégories</option>
+        <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+      </select>
+
+      <!-- Filtre prix -->
+      <select
+        [(ngModel)]="selectedPriceRange"
+        (change)="onFiltersChange({ category: selectedCategory, priceRange: selectedPriceRange })"
+      >
+        <option value="">Tous les prix</option>
+        <option value="0-100"> 0€ - 100€</option>
+        <option value="100-500">100€ – 500€</option>
+        <option value="500-1000">500€ – 1000€</option>
+        <option value="1000+">+ 1000€</option>
+      </select>
+
+    </div>
+  </div>
+
+  <!-- Liste des produits -->
+  <div class="products-grid">
+    <div
+      *ngFor="let product of filteredProducts"
+      class="product-card"
+      [class.out-of-stock]="product.stock === 0"
+    >
+
+      <img
+        *ngIf="product.imageUrl"
+        [src]="product.imageUrl"
+        alt="{{ product.name }}"
+        class="product-image"
+      />
+
+      <h3>{{ product.name }}</h3>
+      <p class="description">{{ product.description }}</p>
+
+      <p class="category">
+        Catégorie : {{ getCategoryDisplayName(product.category) }}
+      </p>
+
+      <p class="price">{{ formatPrice(product.price) }}</p>
+
+      <p class="stock"
+         [class.low-stock]="product.stock > 0 && product.stock < 10">
+        Stock : {{ product.stock }}
+      </p>
+
+      <p class="status" [class]="'status-' + (product.status || 'unknown')">
+        {{ getStatusText(product.status || '') }}
+      </p>
+
+      <div class="product-actions">
+        <button
+          class="add-to-cart-btn"
+          [disabled]="product.stock === 0"
+          (click)="addToCart(product)"
+        >
+          {{ product.stock === 0 ? 'Rupture' : 'Ajouter au panier' }}
+        </button>
+
+        <button class="view-cart-btn" (click)="goToCart()">
+          Voir panier
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Aucun produit -->
+  <div *ngIf="filteredProducts.length === 0" class="no-results">
+    <p>Aucun produit trouvé pour votre recherche.</p>
+    <button (click)="loadProducts()" class="reset-btn">
+      Afficher tous les produits
+    </button>
+  </div>
+</div>

@@ -1,0 +1,46 @@
+<div class="cart-page">
+  <h1>Mon panier</h1>
+
+  <div class="error" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+  <ng-container *ngIf="items$ | async as items">
+    <div *ngIf="items.length === 0" class="empty">
+      Panier vide.
+    </div>
+
+    <div *ngFor="let it of items" class="cart-item">
+      <img *ngIf="it.imageUrl" [src]="it.imageUrl" class="thumb" alt="" />
+
+      <div class="info">
+        <div class="name">{{ it.productName }}</div>
+        <div class="price">{{ it.price | number:'1.2-2' }} €</div>
+      </div>
+
+      <div class="qty">
+        <button (click)="dec(it.productId)">-</button>
+        <span>{{ it.quantity }}</span>
+        <button (click)="inc(it.productId)">+</button>
+      </div>
+
+      <div class="line-total">
+        {{ (it.price * it.quantity) | number:'1.2-2' }} €
+      </div>
+
+      <button class="remove" (click)="remove(it.productId)">Supprimer</button>
+    </div>
+
+    <div class="summary" *ngIf="items.length > 0">
+      <div class="total">
+        Total :
+        <strong>{{ (total$ | async) | number:'1.2-2' }} €</strong>
+      </div>
+
+      <div class="actions">
+        <button (click)="clear()">Vider</button>
+        <button (click)="checkout()" [disabled]="loading">
+          {{ loading ? 'En cours...' : 'Valider la commande' }}
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</div>

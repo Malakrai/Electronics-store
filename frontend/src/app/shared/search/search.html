@@ -1,0 +1,23 @@
+<div class="search-wrap">
+  <span class="search-icon"></span>
+
+  <input
+    class="search-input"
+    type="text"
+    name="term"
+    [(ngModel)]="term"
+    [placeholder]="placeholder"
+    (input)="onTermChange()"
+    autocomplete="off"
+  />
+
+  <button
+    class="search-clear"
+    type="button"
+    *ngIf="term"
+    (click)="clearSearch()"
+    aria-label="Effacer"
+  >
+    ✕
+  </button>
+</div>

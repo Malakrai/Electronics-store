@@ -27,6 +27,6 @@ public class Category {
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<ProductCategory> productCategories = new HashSet<>();
 
-    // Constructeurs, Getters, Setters
+    
     public Category() {}
 }
