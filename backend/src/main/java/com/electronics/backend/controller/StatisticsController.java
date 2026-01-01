@@ -1,5 +1,5 @@
 package com.electronics.backend.controller;
-import com.electronics.backend.service.StatisticsService;
+import com.electronics.backend.services.StatisticsService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

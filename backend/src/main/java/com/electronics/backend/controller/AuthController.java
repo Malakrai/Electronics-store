@@ -1,8 +1,6 @@
 package com.electronics.backend.controller;
 
 import com.electronics.backend.dto.*;
-import com.electronics.backend.dto.AdminRegistrationDto;
-import com.electronics.backend.dto.CustomerRegistrationDto;
 import com.electronics.backend.model.*;
 import com.electronics.backend.services.AuthService;
 import com.electronics.backend.services.GoogleAuthenticatorUtils;
