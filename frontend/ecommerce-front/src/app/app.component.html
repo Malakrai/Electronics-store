@@ -1,0 +1,34 @@
+<mat-toolbar color="primary" class="main-toolbar">
+  <div class="nav-left">
+    <mat-icon>electrical_services</mat-icon>
+    <span class="brand">ElectroShop – Suivi & Livraison</span>
+  </div>
+
+  <span class="spacer"></span>
+
+  <button mat-button routerLink="/tracking">
+    <mat-icon>search</mat-icon>
+    Suivi commande
+  </button>
+
+  <button mat-button routerLink="/delivery">
+    <mat-icon>local_shipping</mat-icon>
+    Livraison
+  </button>
+
+  <button mat-button routerLink="/delivery-track">
+    <mat-icon>track_changes</mat-icon>
+    Suivi livraison
+  </button>
+
+  <button mat-button routerLink="/reviews">
+    <mat-icon>reviews</mat-icon>
+    Avis clients
+  </button>
+</mat-toolbar>
+
+<div class="page-container">
+  <div class="page-content">
+    <router-outlet></router-outlet>
+  </div>
+</div>

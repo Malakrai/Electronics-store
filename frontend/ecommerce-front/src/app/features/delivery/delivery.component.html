@@ -1,0 +1,23 @@
+<mat-card>
+  <mat-card-title> <mat-icon>local_shipping</mat-icon> Informations de livraison </mat-card-title>
+
+  <mat-card-subtitle> Saisissez l'adresse complète du client. </mat-card-subtitle>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Adresse complète</mat-label>
+    <textarea matInput rows="3" [(ngModel)]="address"></textarea>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Transporteur</mat-label>
+    <mat-select [(ngModel)]="carrier">
+      <mat-option value="DHL">DHL</mat-option>
+      <mat-option value="FedEx">FedEx</mat-option>
+      <mat-option value="La Poste">La Poste</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <button mat-raised-button color="primary" (click)="validateDelivery()">
+    <mat-icon>check_circle</mat-icon> Valider la livraison
+  </button>
+</mat-card>
