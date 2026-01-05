@@ -1,5 +1,7 @@
 package com.electronics.backend.services;
 
+import com.electronics.backend.dto.AdminRegistrationDto;
+import com.electronics.backend.dto.CustomerRegistrationDto;
 import com.electronics.backend.dto.MagasinierCreationDto;
 import com.electronics.backend.model.Admin;
 import com.electronics.backend.model.Customer;

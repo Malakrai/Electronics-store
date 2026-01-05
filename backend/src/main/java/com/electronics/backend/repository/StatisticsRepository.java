@@ -1,6 +1,5 @@
 package com.electronics.backend.repository;
 import java.util.Map;
-import com.electronics.backend.model.statistics.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
