@@ -76,6 +76,15 @@ export const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['ADMIN'] }
   },
+  {
+    path: 'admin/statistics',
+    loadComponent: () =>
+      import('./components/admin/statistics/statistics.component')
+        .then(m => m.StatisticsComponent),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ADMIN'] }
+  },
+
 
   /* =====================
      MAGASINIER
