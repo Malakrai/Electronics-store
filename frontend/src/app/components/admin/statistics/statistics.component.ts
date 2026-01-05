@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { StatisticsService } from '../services/statistics.service';
+import { StatisticsService } from '../../../services/statistics.service';
 
 // Chart.js imports
 import { Chart, registerables } from 'chart.js';
