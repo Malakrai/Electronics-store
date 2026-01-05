@@ -64,6 +64,14 @@ export const routes: Routes = [
       canActivate: [AuthGuard, RoleGuard],
       data: { roles: ['CUSTOMER'] }
     },
+  {
+        path: 'customer/billing',
+        loadComponent: () =>
+          import('./components/customer/billing/billing')
+            .then(m => m.BillingComponent),
+        canActivate: [AuthGuard, RoleGuard],
+        data: { roles: ['CUSTOMER'] }
+      },
 
   /* =====================
      ADMIN

@@ -3,7 +3,7 @@ package com.electronics.backend.controller;
 import com.electronics.backend.model.MonthlyBill;
 import com.electronics.backend.model.Payment;
 import com.electronics.backend.model.PaymentMethod;
-import com.electronics.backend.service.BillingService;
+import com.electronics.backend.services.BillingService;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;

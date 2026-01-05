@@ -1,19 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import {
   BillingService,
   MonthlyBill,
   PaymentMethod,
   BillStatus
-} from '../../services/billing';
+} from '../../../services/billing';
 
 @Component({
   selector: 'app-billing',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './billing.html',
-  styleUrl: './billing.css'
+  styleUrls: ['./billing.css']
 })
 export class BillingComponent implements OnInit {
   bills: MonthlyBill[] = [];

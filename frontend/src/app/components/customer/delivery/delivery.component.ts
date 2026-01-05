@@ -28,8 +28,16 @@ import { MatIconModule } from '@angular/material/icon';
 export class DeliveryComponent {
   address = '';
   carrier = 'DHL';
+  constructor(private router: Router) {}
 
   validateDelivery() {
+    if (!this.address) {
+      alert('Veuillez saisir l’adresse.');
+      return;
+    }
+
     alert(`Adresse enregistrée : ${this.address}\nTransporteur : ${this.carrier}`);
+
+    this.router.navigate(['/customer/billing']);
   }
 }
