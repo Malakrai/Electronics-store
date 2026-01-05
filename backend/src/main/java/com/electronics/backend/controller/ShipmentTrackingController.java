@@ -2,7 +2,7 @@ package com.electronics.backend.controller;
 
 import com.electronics.backend.model.Shipment;
 import com.electronics.backend.model.ShipmentTrackingResponse;
-import com.electronics.backend.service.ShipmentTrackingService;
+import com.electronics.backend.services.ShipmentTrackingService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

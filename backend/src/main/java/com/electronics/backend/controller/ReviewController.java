@@ -1,7 +1,7 @@
 package com.electronics.backend.controller;
 
 import com.electronics.backend.model.Review;
-import com.electronics.backend.service.ReviewService;
+import com.electronics.backend.services.ReviewService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
