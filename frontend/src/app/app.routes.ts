@@ -56,6 +56,22 @@ export const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['CUSTOMER'] }
   },
+  {
+      path: 'customer/delivery',
+      loadComponent: () =>
+        import('./components/customer/delivery/delivery.component')
+          .then(m => m.DeliveryComponent),
+      canActivate: [AuthGuard, RoleGuard],
+      data: { roles: ['CUSTOMER'] }
+    },
+  {
+        path: 'customer/billing',
+        loadComponent: () =>
+          import('./components/customer/billing/billing')
+            .then(m => m.BillingComponent),
+        canActivate: [AuthGuard, RoleGuard],
+        data: { roles: ['CUSTOMER'] }
+      },
 
   /* =====================
      ADMIN
@@ -76,6 +92,15 @@ export const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['ADMIN'] }
   },
+  {
+    path: 'admin/statistics',
+    loadComponent: () =>
+      import('./components/admin/statistics/statistics.component')
+        .then(m => m.StatisticsComponent),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ADMIN'] }
+  },
+
 
   /* =====================
      MAGASINIER
@@ -96,6 +121,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['MAGASINIER'] }
   },
+
 
   /* =====================
      404

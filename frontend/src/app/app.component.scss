@@ -1,0 +1,37 @@
+.main-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 0 25px;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.page-container {
+  padding: 40px 20px;
+  background: #f4f6f8;
+  min-height: calc(100vh - 64px);
+}
+
+.page-content {
+  max-width: 900px;
+  margin: auto;
+  background: white;
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: 0px 6px 25px rgba(0, 0, 0, 0.1);
+}

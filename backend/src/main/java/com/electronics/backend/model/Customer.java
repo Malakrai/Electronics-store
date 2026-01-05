@@ -27,7 +27,13 @@ public class Customer extends User {
     private BigDecimal creditLimit;
     private BigDecimal currentBalance = BigDecimal.ZERO;
 
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ElementCollection(targetClass = PaymentMethod.class)
+    @Enumerated(EnumType.STRING) // stocke les valeurs comme "CASH", "CARD", "TRANSFER"
+    @CollectionTable(
+            name = "customer_payment_methods",
+            joinColumns = @JoinColumn(name = "customer_id")
+    )
+    @Column(name = "payment_method")
     private Set<PaymentMethod> paymentMethods = new HashSet<>();
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -41,35 +47,4 @@ public class Customer extends User {
         super();
     }
 
-    // Getters et Setters spécifiques à Customer
-    public CustomerType getType() { return type; }
-    public void setType(CustomerType type) { this.type = type; }
-
-    public String getAccountNumber() { return accountNumber; }
-    public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
-
-    public String getBillingAddress() { return billingAddress; }
-    public void setBillingAddress(String billingAddress) { this.billingAddress = billingAddress; }
-
-    public String getShippingAddress() { return shippingAddress; }
-    public void setShippingAddress(String shippingAddress) { this.shippingAddress = shippingAddress; }
-
-    public BigDecimal getCreditLimit() { return creditLimit; }
-    public void setCreditLimit(BigDecimal creditLimit) { this.creditLimit = creditLimit; }
-
-    public BigDecimal getCurrentBalance() { return currentBalance; }
-    public void setCurrentBalance(BigDecimal currentBalance) { this.currentBalance = currentBalance; }
-
-    public Set<PaymentMethod> getPaymentMethods() { return paymentMethods; }
-    public void setPaymentMethods(Set<PaymentMethod> paymentMethods) { this.paymentMethods = paymentMethods; }
-
-    public Set<Order> getOrders() { return orders; }
-    public void setOrders(Set<Order> orders) { this.orders = orders; }
-
-    public Set<MonthlyBill> getMonthlyBills() { return monthlyBills; }
-    public void setMonthlyBills(Set<MonthlyBill> monthlyBills) { this.monthlyBills = monthlyBills; }
-
-    public BigDecimal calculateBalance() {
-        return currentBalance;
-    }
 }

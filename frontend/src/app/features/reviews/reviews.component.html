@@ -1,0 +1,19 @@
+<mat-card>
+  <mat-card-title> <mat-icon>reviews</mat-icon> Avis clients </mat-card-title>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Note</mat-label>
+    <mat-select [(ngModel)]="rating">
+      <mat-option *ngFor="let r of [1, 2, 3, 4, 5]" [value]="r"> {{ r }} ★ </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Commentaire</mat-label>
+    <textarea matInput rows="3" [(ngModel)]="comment"></textarea>
+  </mat-form-field>
+
+  <button mat-raised-button color="accent" (click)="sendReview()">
+    <mat-icon>send</mat-icon> Envoyer
+  </button>
+</mat-card>

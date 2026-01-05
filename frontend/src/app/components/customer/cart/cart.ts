@@ -30,21 +30,24 @@ export class CartComponent {
   clear() { this.cartService.clear(); }
 
   checkout() {
-
-    // ❌ PAS CONNECTÉ
     if (!this.authService.isAuthenticated()) {
       alert('Vous devez être connecté pour passer une commande.');
-      this.router.navigateByUrl('/login');
+
+
+      this.router.navigate(['/login'], {
+        queryParams: { returnUrl: 'customer/delivery' }
+      });
       return;
     }
-      if (!this.authService.isCustomer()) {
-         alert('Vous devez être connecté pour passer une commande.');
-        this.router.navigate(['/login'], {
-          replaceUrl: true
-        });
-        return;
-      }
-    // ✅ CUSTOMER CONNECTÉ
+
+    if (!this.authService.isCustomer()) {
+      alert('Vous devez être connecté en tant que customer pour passer une commande.');
+      this.router.navigate(['/login'], {
+        queryParams: { returnUrl: 'customer/delivery' }
+      });
+      return;
+    }
+
     this.loading = true;
     this.errorMsg = '';
 
@@ -53,7 +56,7 @@ export class CartComponent {
         this.loading = false;
         this.cartService.clear();
         alert('Commande validée avec succès');
-        this.router.navigateByUrl('/catalog');
+        this.router.navigateByUrl('customer/delivery');
       },
       error: (err) => {
         this.loading = false;
@@ -61,7 +64,7 @@ export class CartComponent {
         if (err.status === 401) {
           alert('Session expirée. Veuillez vous reconnecter.');
           this.authService.logout();
-          this.router.navigateByUrl('/login');
+          this.router.navigate(['/login'], { queryParams: { returnUrl: '/delivery' } });
         }
         else if (err.status === 403) {
           alert('Accès interdit. Rôle CUSTOMER requis.');
@@ -72,4 +75,5 @@ export class CartComponent {
       }
     });
   }
+
 }

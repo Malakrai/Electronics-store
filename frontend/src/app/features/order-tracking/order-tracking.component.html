@@ -1,0 +1,24 @@
+<mat-card class="tracking-card">
+  <mat-card-title>Suivi de livraison</mat-card-title>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Numéro de suivi</mat-label>
+    <input matInput [(ngModel)]="orderNumber" />
+  </mat-form-field>
+
+  <button mat-raised-button color="primary" (click)="trackDelivery()">Rechercher</button>
+</mat-card>
+
+<!-- RESULTAT DU BACKEND -->
+<mat-card *ngIf="deliveryInfo" class="result-card">
+  <mat-card-title>Informations de livraison</mat-card-title>
+
+  <p><b>Numéro :</b> {{ deliveryInfo.trackingNumber }}</p>
+  <p><b>Transporteur :</b> {{ deliveryInfo.carrier }}</p>
+  <p><b>Adresse :</b> {{ deliveryInfo.address }}</p>
+  <p><b>Statut :</b> {{ deliveryInfo.status }}</p>
+
+  <p><b>Expédié le :</b> {{ deliveryInfo.shipDate }}</p>
+  <p><b>Date estimée :</b> {{ deliveryInfo.estimatedDelivery }}</p>
+  <p><b>Livré le :</b> {{ deliveryInfo.actualDelivery }}</p>
+</mat-card>
