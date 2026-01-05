@@ -56,6 +56,14 @@ export const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['CUSTOMER'] }
   },
+  {
+      path: 'customer/delivery',
+      loadComponent: () =>
+        import('./components/customer/delivery/delivery.component')
+          .then(m => m.DeliveryComponent),
+      canActivate: [AuthGuard, RoleGuard],
+      data: { roles: ['CUSTOMER'] }
+    },
 
   /* =====================
      ADMIN
@@ -105,6 +113,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['MAGASINIER'] }
   },
+
 
   /* =====================
      404

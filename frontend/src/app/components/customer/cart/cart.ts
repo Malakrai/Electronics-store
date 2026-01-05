@@ -33,9 +33,9 @@ export class CartComponent {
     if (!this.authService.isAuthenticated()) {
       alert('Vous devez être connecté pour passer une commande.');
 
-      // On passe la page actuelle (livraison) comme returnUrl
+
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: '/delivery' }
+        queryParams: { returnUrl: 'customer/delivery' }
       });
       return;
     }
@@ -43,7 +43,7 @@ export class CartComponent {
     if (!this.authService.isCustomer()) {
       alert('Vous devez être connecté en tant que customer pour passer une commande.');
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: '/delivery' }
+        queryParams: { returnUrl: 'customer/delivery' }
       });
       return;
     }
@@ -56,7 +56,7 @@ export class CartComponent {
         this.loading = false;
         this.cartService.clear();
         alert('Commande validée avec succès');
-        this.router.navigateByUrl('/catalog');
+        this.router.navigateByUrl('customer/delivery');
       },
       error: (err) => {
         this.loading = false;
