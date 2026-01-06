@@ -48,8 +48,10 @@ public class BillingService {
         item.setDescription(description);
         item.setQuantity(quantity);
         item.setUnitPrice(unitPrice);
+
         BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
         item.setLineTotal(lineTotal);
+
         item.setMonthlyBill(bill);
         billItemRepository.save(item);
 
@@ -58,19 +60,16 @@ public class BillingService {
 
         return bill;
     }
-    public List<MonthlyBill> getUnpaidBills() {
-    return monthlyBillRepository.findAll()
-            .stream()
-            .filter(b -> b.getStatus() != BillStatus.PAID)
-            .toList();
+
+    /**
+     * ✅ Crée une facture de test PENDING avec 1 item.
+     * Utilisé par POST /api/bills/test
+     */
+    @Transactional
+    public MonthlyBill createTestBill(Long customerId) {
+        // tu peux changer le produit/description comme tu veux
+        return createSimpleBill(customerId, "Produit test", 1, new BigDecimal("200.00"));
     }
-    public MonthlyBill cancelBill(Long billId) {
-    MonthlyBill bill = getBill(billId);
-    bill.setStatus(BillStatus.CANCELED);
-    return monthlyBillRepository.save(bill);
-}
-
-
 
     public MonthlyBill getBill(Long billId) {
         return monthlyBillRepository.findById(billId)
@@ -83,6 +82,25 @@ public class BillingService {
 
     public List<MonthlyBill> getBillsForCustomer(Long customerId) {
         return monthlyBillRepository.findByCustomerId(customerId);
+    }
+
+    public List<MonthlyBill> getUnpaidBills() {
+        return monthlyBillRepository.findAll()
+                .stream()
+                .filter(b -> b.getStatus() != BillStatus.PAID)
+                .toList();
+    }
+
+    @Transactional
+    public MonthlyBill cancelBill(Long billId) {
+        MonthlyBill bill = getBill(billId);
+
+        // ⚠️ Mets le bon enum selon ton BillStatus :
+        // Si ton enum = CANCELED -> garde CANCELED
+        // Si ton enum = CANCELLED -> remplace par CANCELLED
+        bill.setStatus(BillStatus.CANCELED);
+
+        return monthlyBillRepository.save(bill);
     }
 
     @Transactional
@@ -100,8 +118,7 @@ public class BillingService {
                 .map(Payment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        if (bill.getTotalAmount() != null
-                && totalPaid.compareTo(bill.getTotalAmount()) >= 0) {
+        if (bill.getTotalAmount() != null && totalPaid.compareTo(bill.getTotalAmount()) >= 0) {
             bill.setStatus(BillStatus.PAID);
             monthlyBillRepository.save(bill);
         }

@@ -60,6 +60,24 @@ public class Order {
 
     // Constructeur par défaut
     public Order() {}
+public Long getId() {
+    return id;
+}
 
-    // Getters / setters (ajoute-les si ton IDE ne l'a pas déjà fait)
+public Customer getCustomer() {
+    return customer;
+}
+
+public Set<OrderItem> getOrderItems() {
+    return orderItems;
+}
+
+public BigDecimal getShippingAmount() {
+    return shippingAmount;
+}
+
+public BigDecimal getTaxAmount() {
+    return taxAmount;
+}
+
 }

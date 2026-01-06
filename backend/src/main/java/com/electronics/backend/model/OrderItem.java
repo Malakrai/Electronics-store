@@ -36,6 +36,21 @@ public class OrderItem {
     @OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<ShipmentItem> shipmentItems = new HashSet<>();
 
-    // Constructeurs, Getters, Setters
+    public Integer getQuantity() {
+    return quantity;
+}
+
+public BigDecimal getUnitPrice() {
+    return unitPrice;
+}
+
+public BigDecimal getLineTotal() {
+    return lineTotal;
+}
+
+public Product getProduct() {
+    return product;
+}
+
 
 }
