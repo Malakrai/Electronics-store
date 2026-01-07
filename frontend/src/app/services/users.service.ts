@@ -6,15 +6,31 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class UsersAdminService {
-
   private apiUrl = 'http://localhost:8080/api/auth';
 
   constructor(private http: HttpClient) {}
 
-  createMagasinier(data: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/admin/create-magasinier`, data);
+
+  getUsers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/admin/users`);
   }
 
+  createUser(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/admin/create-user`, data);
+  }
+
+  updateUser(id: string, data: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/admin/update-user/${id}`, data);
+  }
+
+  deleteUser(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/admin/delete-user/${id}`);
+  }
+
+
+  createMagasinier(data: any): Observable<any> {
+    return this.createUser({ ...data, role: 'magasinier' });
+  }
 
   getMagasiniers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/admin/magasiniers`);

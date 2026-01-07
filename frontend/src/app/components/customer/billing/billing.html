@@ -9,8 +9,14 @@
     </div>
 
     <div class="header-right">
-      <button class="link-button" (click)="loadUnpaidBills()">
-        🔄 Recharger les factures
+      <button class="link-button" (click)="reloadBills()" [disabled]="isLoading">
+        🔄 {{ isLoading ? 'Chargement...' : 'Actualiser' }}
+      </button>
+      <button class="link-button" routerLink="/customer/orders" style="margin-left: 10px;">
+        📋 Mes commandes
+      </button>
+      <button class="link-button" routerLink="/customer/cart" style="margin-left: 10px;">
+        🛒 Mon panier
       </button>
     </div>
   </header>
@@ -18,24 +24,51 @@
   <main class="checkout-main">
     <!-- Résumé facture -->
     <section class="card order-card">
-      <h2>Votre facture</h2>
+      <div class="card-header">
+        <h2>Vos factures</h2>
+        <!-- CORRECTION ICI : Utilisez getUnpaidCount() au lieu du filtre inline -->
+        <div class="badge" *ngIf="bills.length > 0">
+          {{ getUnpaidCount() }} impayée(s)
+        </div>
+      </div>
 
-      <div *ngIf="isLoading" class="info-text">Chargement des factures...</div>
-      <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+      <div *ngIf="isLoading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement de vos factures...</p>
+      </div>
+
+      <div *ngIf="errorMessage && !isLoading" class="alert alert-error">
+        <span>❌ {{ errorMessage }}</span>
+        <button class="retry-btn" (click)="loadUnpaidBills()">Réessayer</button>
+      </div>
 
       <div *ngIf="bills.length === 0 && !isLoading" class="empty-state">
-        <p>Aucune facture disponible pour le moment.</p>
+        <div class="empty-icon">📄</div>
+        <h3>Aucune facture trouvée</h3>
+        <p>Vous n'avez pas de facture en attente de paiement.</p>
+        <p class="small-text">
+          Après validation d'une commande, une nouvelle facture apparaîtra ici.
+        </p>
+        <div class="empty-actions">
+          <button class="secondary-button" (click)="loadUnpaidBills()">
+            Vérifier à nouveau
+          </button>
+          <button class="secondary-button" routerLink="/shop">
+            Continuer vos achats
+          </button>
+        </div>
       </div>
 
       <ng-container *ngIf="bills.length > 0 && selectedBill as bill">
         <div class="field">
-          <label>Choisir une facture</label>
+          <label>Sélectionnez une facture</label>
           <select class="select" [ngModel]="bill.id" (ngModelChange)="onBillChange($event)">
             <option *ngFor="let b of bills" [value]="b.id">
               Facture #{{ b.id }} - {{ b.totalAmount | number: '1.2-2' }} €
-              ({{ b.customer.firstName }} {{ b.customer.lastName }})
+              ({{ getStatusLabel(b.status) }})
             </option>
           </select>
+          <small class="hint">{{ bills.length }} facture(s) disponible(s)</small>
         </div>
 
         <div class="bill-meta">
@@ -47,153 +80,245 @@
             <div class="meta-small">{{ bill.customer.email }}</div>
           </div>
           <div>
-            <div class="meta-label">Date</div>
+            <div class="meta-label">Date de facturation</div>
             <div class="meta-value">
               {{ bill.billDate | date: 'dd/MM/yyyy' }}
             </div>
+            <div class="meta-small">{{ bill.billDate | date: 'HH:mm' }}</div>
           </div>
           <div>
             <div class="meta-label">Statut</div>
             <span [ngClass]="getStatusChipClass(bill.status)">
-              {{ bill.status }}
+              {{ getStatusLabel(bill.status) }}
             </span>
           </div>
         </div>
 
-        <div class="items-table">
-          <div class="items-header">
-            <span>Article</span>
-            <span>Qté</span>
-            <span>PU</span>
-            <span>Total</span>
-          </div>
-          <div class="items-row" *ngFor="let item of bill.items">
-            <span>{{ item.description }}</span>
-            <span>{{ item.quantity }}</span>
-            <span>{{ item.unitPrice | number: '1.2-2' }} €</span>
-            <span>{{ item.lineTotal | number: '1.2-2' }} €</span>
+        <div class="items-section">
+          <h3>Détails de la facture</h3>
+          <div class="items-table">
+            <div class="items-header">
+              <span class="item-desc">Description</span>
+              <span class="item-qty">Quantité</span>
+              <span class="item-price">Prix unitaire</span>
+              <span class="item-total">Total</span>
+            </div>
+            <div class="items-body">
+              <div class="items-row" *ngFor="let item of bill.items">
+                <span class="item-desc">{{ item.description }}</span>
+                <span class="item-qty">{{ item.quantity }}</span>
+                <span class="item-price">{{ item.unitPrice | number: '1.2-2' }} €</span>
+                <span class="item-total">{{ item.lineTotal | number: '1.2-2' }} €</span>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="total-line">
-          <span>Total à payer</span>
+          <span>Total de la facture</span>
           <span class="total-amount">{{ bill.totalAmount | number: '1.2-2' }} €</span>
         </div>
 
-        <button class="secondary-button" (click)="openPdf(bill)">
-          📄 Télécharger la facture en PDF
-        </button>
+        <div class="bill-actions">
+          <button class="secondary-button" (click)="openPdf(bill)">
+            📄 Télécharger le PDF
+          </button>
+          <button class="secondary-button" *ngIf="bill.status === 'PAID'">
+            📧 Envoyer par email
+          </button>
+        </div>
       </ng-container>
     </section>
 
     <!-- Bloc paiement -->
     <section class="card payment-card">
-      <h2>Paiement</h2>
+      <h2>Procéder au paiement</h2>
 
       <ng-container *ngIf="selectedBill as bill; else noBill">
-        <div class="payment-methods">
-          <button
-            type="button"
-            class="pill"
-            [class.pill-active]="paymentMethod === 'CARD'"
-            (click)="paymentMethod = 'CARD'"
-          >
-            💳 Carte bancaire
-          </button>
-          <button
-            type="button"
-            class="pill"
-            [class.pill-active]="paymentMethod === 'PAYPAL'"
-            (click)="paymentMethod = 'PAYPAL'"
-          >
-            🅿️ PayPal
-          </button>
-          <button
-            type="button"
-            class="pill"
-            [class.pill-active]="paymentMethod === 'BANK_TRANSFER'"
-            (click)="paymentMethod = 'BANK_TRANSFER'"
-          >
-            🏦 Virement bancaire
-          </button>
-          <button
-            type="button"
-            class="pill"
-            [class.pill-active]="paymentMethod === 'CASH'"
-            (click)="paymentMethod = 'CASH'"
-          >
-            💶 Espèces
-          </button>
+        <div class="payment-status" [ngClass]="'status-' + bill.status.toLowerCase()">
+          <div class="status-icon">
+            <span *ngIf="bill.status === 'UNPAID'">⏳</span>
+            <span *ngIf="bill.status === 'PAID'">✅</span>
+            <span *ngIf="bill.status === 'CANCELLED'">❌</span>
+          </div>
+          <div class="status-text">
+            <strong>{{ getStatusLabel(bill.status) }}</strong>
+            <small *ngIf="bill.status === 'UNPAID'">En attente de paiement</small>
+            <small *ngIf="bill.status === 'PAID'">Facture réglée</small>
+            <small *ngIf="bill.status === 'CANCELLED'">Facture annulée</small>
+          </div>
         </div>
 
-        <!-- Formulaire carte -->
-        <div *ngIf="paymentMethod === 'CARD'" class="card-form">
-          <div class="field">
-            <label>Nom sur la carte</label>
-            <input class="input" type="text" placeholder="Ex : Mario Valencia" />
+        <div *ngIf="bill.status === 'UNPAID'">
+          <h3>Méthode de paiement</h3>
+          <div class="payment-methods">
+            <button
+              type="button"
+              class="pill"
+              [class.pill-active]="paymentMethod === 'CARD'"
+              (click)="paymentMethod = 'CARD'"
+            >
+              💳 Carte bancaire
+            </button>
+            <button
+              type="button"
+              class="pill"
+              [class.pill-active]="paymentMethod === 'PAYPAL'"
+              (click)="paymentMethod = 'PAYPAL'"
+            >
+              🅿️ PayPal
+            </button>
+            <button
+              type="button"
+              class="pill"
+              [class.pill-active]="paymentMethod === 'BANK_TRANSFER'"
+              (click)="paymentMethod = 'BANK_TRANSFER'"
+            >
+              🏦 Virement bancaire
+            </button>
+            <button
+              type="button"
+              class="pill"
+              [class.pill-active]="paymentMethod === 'CASH'"
+              (click)="paymentMethod = 'CASH'"
+            >
+              💶 Espèces
+            </button>
           </div>
-          <div class="field">
-            <label>Numéro de carte</label>
-            <input class="input" type="text" placeholder="XXXX XXXX XXXX XXXX" />
-          </div>
-          <div class="field-row">
+
+          <!-- Formulaire carte -->
+          <div *ngIf="paymentMethod === 'CARD'" class="card-form">
             <div class="field">
-              <label>Expiration</label>
-              <input class="input" type="text" placeholder="MM/AA" />
+              <label>Nom sur la carte</label>
+              <input class="input" type="text" placeholder="Ex : Jean Dupont" />
             </div>
             <div class="field">
-              <label>CVV</label>
-              <input class="input" type="password" placeholder="***" />
+              <label>Numéro de carte</label>
+              <input class="input" type="text" placeholder="XXXX XXXX XXXX XXXX" />
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label>Date d'expiration</label>
+                <input class="input" type="text" placeholder="MM/AA" />
+              </div>
+              <div class="field">
+                <label>Code de sécurité (CVV)</label>
+                <input class="input" type="password" placeholder="***" />
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="paymentMethod === 'PAYPAL'" class="payment-info">
+            <p>Vous serez redirigé vers PayPal pour confirmer votre paiement.</p>
+            <p class="small-text">Paiement sécurisé par PayPal.</p>
+          </div>
+
+          <div *ngIf="paymentMethod === 'BANK_TRANSFER'" class="payment-info">
+            <p><strong>Coordonnées bancaires :</strong></p>
+            <div class="bank-details">
+              <p>IBAN: <code>FR76 1234 5678 9012 3456 7890 123</code></p>
+              <p>BIC: <code>ABCDFRPP</code></p>
+              <p>Bénéficiaire: <strong>ElectroShop</strong></p>
+              <p>Référence: <strong>FACTURE-{{ bill.id }}</strong></p>
+            </div>
+          </div>
+
+          <div *ngIf="paymentMethod === 'CASH'" class="payment-info">
+            <p>Cette option est disponible uniquement en magasin.</p>
+            <p>Présentez votre numéro de facture <strong>#{{ bill.id }}</strong> à la caisse.</p>
+          </div>
+
+          <div class="field">
+            <label>Montant à régler</label>
+            <div class="amount-input">
+              <input
+                type="number"
+                min="0.01"
+                [max]="bill.totalAmount"
+                step="0.01"
+                [(ngModel)]="paymentAmount"
+                class="input"
+                [class.input-error]="paymentAmount && (paymentAmount > bill.totalAmount || paymentAmount <= 0)"
+              />
+              <span class="currency">€</span>
+            </div>
+            <small class="hint">
+              Montant total de la facture : <strong>{{ bill.totalAmount | number: '1.2-2' }} €</strong>
+            </small>
+            <small class="error-hint" *ngIf="paymentAmount && paymentAmount > bill.totalAmount">
+              Le montant ne peut pas dépasser {{ bill.totalAmount | number: '1.2-2' }} €
+            </small>
+          </div>
+
+          <button
+            class="primary-button"
+            (click)="paySelectedBill()"
+            [disabled]="isPaying || !paymentAmount || paymentAmount <= 0 || paymentAmount > bill.totalAmount"
+          >
+            <span *ngIf="!isPaying">
+              Payer {{ (paymentAmount || bill.totalAmount) | number: '1.2-2' }} €
+            </span>
+            <span *ngIf="isPaying">
+              <span class="spinner-small"></span>
+              Traitement en cours...
+            </span>
+          </button>
+
+          <p class="secure-info">
+            🔒 Paiement 100% sécurisé - Vos données sont cryptées
+          </p>
+        </div>
+
+        <div *ngIf="bill.status === 'PAID'" class="paid-info">
+          <div class="success-message">
+            <span>✅</span>
+            <div>
+              <h3>Facture déjà réglée</h3>
+              <p>Cette facture a été payée. Vous pouvez télécharger le reçu en PDF.</p>
             </div>
           </div>
         </div>
 
-        <div *ngIf="paymentMethod === 'PAYPAL'" class="payment-info">
-          Vous serez redirigé vers PayPal pour confirmer votre paiement.
+        <div *ngIf="bill.status === 'CANCELLED'" class="cancelled-info">
+          <div class="error-message">
+            <span>❌</span>
+            <div>
+              <h3>Facture annulée</h3>
+              <p>Cette facture a été annulée et ne peut plus être payée.</p>
+            </div>
+          </div>
         </div>
-        <div *ngIf="paymentMethod === 'BANK_TRANSFER'" class="payment-info">
-          Les instructions de virement bancaire s'afficheront après validation.
-        </div>
-        <div *ngIf="paymentMethod === 'CASH'" class="payment-info">
-          Ce mode est destiné à un règlement en magasin.
-        </div>
-
-        <div class="field">
-          <label>Montant à payer</label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            [(ngModel)]="paymentAmount"
-            class="input"
-          />
-          <small class="hint">Par défaut : montant total de la facture.</small>
-        </div>
-
-        <button
-          class="primary-button"
-          (click)="paySelectedBill()"
-          [disabled]="isPaying || bill.status === 'PAID' || bill.status === 'CANCELLED'"
-        >
-          <span *ngIf="!isPaying">
-            Payer {{ paymentAmount || bill.totalAmount | number: '1.2-2' }} €
-          </span>
-          <span *ngIf="isPaying">Traitement du paiement...</span>
-        </button>
 
         <div *ngIf="successMessage" class="alert alert-success">
-          {{ successMessage }}
+          <span>✅</span>
+          <div>{{ successMessage }}</div>
         </div>
+
         <div *ngIf="errorMessage" class="alert alert-error">
-          {{ errorMessage }}
+          <span>❌</span>
+          <div>{{ errorMessage }}</div>
         </div>
       </ng-container>
 
       <ng-template #noBill>
-        <p class="info-text">
-          Aucune facture sélectionnée. Choisissez une facture à gauche pour procéder au paiement.
-        </p>
+        <div class="no-bill-selected">
+          <div class="no-bill-icon">📋</div>
+          <h3>Aucune facture sélectionnée</h3>
+          <p>Sélectionnez une facture dans la liste à gauche pour voir les détails et procéder au paiement.</p>
+          <p class="small-text">
+            Si vous venez de valider une commande, votre facture apparaîtra ici après quelques secondes.
+          </p>
+        </div>
       </ng-template>
     </section>
   </main>
+
+  <footer class="checkout-footer">
+    <p>© 2024 ElectroPay - Service de paiement sécurisé</p>
+    <p class="small-text">
+      <a href="#">Conditions générales</a> •
+      <a href="#">Politique de confidentialité</a> •
+      <a href="#">Aide</a>
+    </p>
+  </footer>
 </div>

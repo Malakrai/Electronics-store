@@ -17,15 +17,54 @@ public class BillingService {
     private final BillItemRepository billItemRepository;
     private final PaymentRepository paymentRepository;
     private final CustomerRepository customerRepository;
+    private final OrderRepository orderRepository; // AJOUTÉ
 
     public BillingService(MonthlyBillRepository monthlyBillRepository,
                           BillItemRepository billItemRepository,
                           PaymentRepository paymentRepository,
-                          CustomerRepository customerRepository) {
+                          CustomerRepository customerRepository,
+                          OrderRepository orderRepository) { // AJOUTÉ
         this.monthlyBillRepository = monthlyBillRepository;
         this.billItemRepository = billItemRepository;
         this.paymentRepository = paymentRepository;
         this.customerRepository = customerRepository;
+        this.orderRepository = orderRepository; // AJOUTÉ
+    }
+
+    // MÉTHODE CRITIQUE : Créer une facture depuis une commande
+    @Transactional
+    public MonthlyBill createBillFromOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+
+        // Vérifier si une facture existe déjà pour cette commande
+        MonthlyBill existingBill = monthlyBillRepository.findByOrderId(orderId);
+        if (existingBill != null) {
+            return existingBill;
+        }
+
+        // Créer la facture
+        MonthlyBill bill = new MonthlyBill();
+        bill.setCustomer(order.getCustomer());
+        bill.setOrder(order);
+        bill.setBillDate(LocalDate.now());
+        bill.setStatus(BillStatus.UNPAID); // CHANGÉ de PENDING à UNPAID
+        bill.setTotalAmount(order.getTotalAmount());
+
+        monthlyBillRepository.save(bill);
+
+        // Créer les lignes de facture à partir des lignes de commande
+        for (OrderItem orderItem : order.getOrderItems()) {
+            BillItem billItem = new BillItem();
+            billItem.setDescription(orderItem.getProductName());
+            billItem.setQuantity(orderItem.getQuantity());
+            billItem.setUnitPrice(orderItem.getUnitPrice());
+            billItem.setLineTotal(orderItem.getLineTotal());
+            billItem.setMonthlyBill(bill);
+            billItemRepository.save(billItem);
+        }
+
+        return bill;
     }
 
     @Transactional
@@ -40,7 +79,7 @@ public class BillingService {
         MonthlyBill bill = new MonthlyBill();
         bill.setCustomer(customer);
         bill.setBillDate(LocalDate.now());
-        bill.setStatus(BillStatus.PENDING);
+        bill.setStatus(BillStatus.UNPAID); // CHANGÉ ICI
         bill.setTotalAmount(BigDecimal.ZERO);
         monthlyBillRepository.save(bill);
 
@@ -58,19 +97,19 @@ public class BillingService {
 
         return bill;
     }
+
     public List<MonthlyBill> getUnpaidBills() {
-    return monthlyBillRepository.findAll()
-            .stream()
-            .filter(b -> b.getStatus() != BillStatus.PAID)
-            .toList();
+        return monthlyBillRepository.findAll()
+                .stream()
+                .filter(b -> b.getStatus() == BillStatus.UNPAID) // CHANGÉ ICI
+                .toList();
     }
+
     public MonthlyBill cancelBill(Long billId) {
-    MonthlyBill bill = getBill(billId);
-    bill.setStatus(BillStatus.CANCELED);
-    return monthlyBillRepository.save(bill);
-}
-
-
+        MonthlyBill bill = getBill(billId);
+        bill.setStatus(BillStatus.CANCELLED); // CHANGÉ de CANCELED à CANCELLED
+        return monthlyBillRepository.save(bill);
+    }
 
     public MonthlyBill getBill(Long billId) {
         return monthlyBillRepository.findById(billId)
@@ -89,6 +128,16 @@ public class BillingService {
     public Payment payBill(Long billId, BigDecimal amount, PaymentMethod method) {
         MonthlyBill bill = getBill(billId);
 
+        // Vérifier si la facture est déjà payée
+        if (bill.getStatus() == BillStatus.PAID) {
+            throw new IllegalArgumentException("Bill is already paid");
+        }
+
+        // Vérifier si la facture est annulée
+        if (bill.getStatus() == BillStatus.CANCELLED) {
+            throw new IllegalArgumentException("Bill is cancelled");
+        }
+
         Payment payment = new Payment();
         payment.setAmount(amount);
         payment.setPaymentDate(LocalDateTime.now());
@@ -103,6 +152,10 @@ public class BillingService {
         if (bill.getTotalAmount() != null
                 && totalPaid.compareTo(bill.getTotalAmount()) >= 0) {
             bill.setStatus(BillStatus.PAID);
+            monthlyBillRepository.save(bill);
+        } else {
+            // Si paiement partiel, on pourrait mettre à jour un statut PARTIAL
+            bill.setStatus(BillStatus.UNPAID); // Reste impayé si paiement partiel
             monthlyBillRepository.save(bill);
         }
 

@@ -59,16 +59,17 @@
             <p>Gérer les comptes utilisateurs et permissions</p>
             <button class="btn btn-primary">Accéder</button>
           </div>
-          <div class="action-card" (click)="manageProducts()">
+          <div class="action-card">
             <div class="action-icon">📦</div>
             <h4>Gestion Produits</h4>
             <p>Gérer le catalogue produits et stocks</p>
             <button class="btn btn-primary">Accéder</button>
           </div>
-          <div class="action-card" routerLink="/admin/statistics">
+          <div class="action-card" (click)="statistiques()">
             <div class="action-icon">📊</div>
             <h4>Rapports</h4>
             <p>Consulter les statistiques et analyses</p>
+            <button class="btn btn-primary">Accéder</button>
           </div>
         </div>
       </section>

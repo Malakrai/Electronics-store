@@ -3,12 +3,14 @@
 
 <app-sidebar></app-sidebar>
 
-<!-- Bouton login dans le header si tu veux un bouton séparé -->
-<button class="login-btn" (click)="goLogin()">Se connecter</button>
+<!-- Bouton login dans le header -->
+<button class="login-btn" (click)="handleLoginButton()">
+  {{ getLoginButtonText() }}
+</button>
 
 <div class="catalog-page">
   <div class="catalog-header">
-    <h1>Notre Catalogue Électronique</h1>
+    <h1>Électronique Store</h1>
 
     <!-- Barre de recherche -->
     <app-search-box

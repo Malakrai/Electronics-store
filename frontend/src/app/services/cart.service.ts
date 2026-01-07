@@ -29,10 +29,8 @@ export class CartService {
 
   private readonly _items$ = new BehaviorSubject<CartItem[]>(this.loadFromStorage());
 
-  /** Liste panier */
   readonly items$: Observable<CartItem[]> = this._items$.asObservable();
 
-  /** Total en € */
   readonly total$: Observable<number> = this.items$.pipe(
     map(items => items.reduce((sum, i) => sum + i.price * i.quantity, 0))
   );
@@ -56,14 +54,13 @@ export class CartService {
     this.setItems(next);
   }
 
-  /** Compat avec ton code si tu appelles cartService.add(...) */
-  add(payload: { productId: number; name: string; price: number; quantity?: number; imageUrl?: string }) {
+  add(productId: number, productName: string, price: number, imageUrl?: string): void {
     this.addItem({
-      productId: payload.productId,
-      productName: payload.name,
-      price: payload.price,
-      quantity: payload.quantity ?? 1,
-      imageUrl: payload.imageUrl
+      productId,
+      productName,
+      price,
+      quantity: 1,
+      imageUrl
     });
   }
 
@@ -90,10 +87,12 @@ export class CartService {
     this.setItems([]);
   }
 
-  // ---------- Checkout (enregistre en DB via ton backend) ----------
+  // ---------- Checkout ----------
   checkout(extra?: { customerName?: string; customerEmail?: string }): Observable<any> {
     const items = this._items$.value;
-    if (!items.length) throw new Error('Cart is empty');
+    if (!items.length) {
+      throw new Error('Cart is empty');
+    }
 
     const body: CheckoutRequestDto = {
       items: items.map(i => ({ productId: i.productId, quantity: i.quantity })),
@@ -102,6 +101,15 @@ export class CartService {
     };
 
     return this.http.post(`${this.API_URL}/orders/checkout`, body);
+  }
+
+  // ---------- Méthodes utilitaires ----------
+  getCurrentItems(): CartItem[] {
+    return [...this._items$.value];
+  }
+
+  getCurrentTotal(): number {
+    return this._items$.value.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   }
 
   // ---------- Storage ----------

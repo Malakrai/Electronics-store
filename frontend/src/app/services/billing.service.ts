@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+// Export des types
 export type PaymentMethod = 'CARD' | 'PAYPAL' | 'BANK_TRANSFER' | 'CASH';
 
 export interface Customer {
@@ -23,7 +24,7 @@ export type BillStatus = 'PAID' | 'UNPAID' | 'CANCELLED';
 
 export interface MonthlyBill {
   id: number;
-  billDate: string; // ISO string
+  billDate: string;
   totalAmount: number;
   status: BillStatus;
   customer: Customer;
@@ -56,5 +57,15 @@ export class BillingService {
   payBill(billId: number, amount: number, method: PaymentMethod): Observable<Payment> {
     const params = { amount: amount.toString(), method };
     return this.http.post<Payment>(`${this.apiUrl}/${billId}/pay`, null, { params });
+  }
+
+  downloadBillPdf(billId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${billId}/pdf`, {
+      responseType: 'blob'
+    });
+  }
+
+  getBillById(billId: number): Observable<MonthlyBill> {
+    return this.http.get<MonthlyBill>(`${this.apiUrl}/${billId}`);
   }
 }

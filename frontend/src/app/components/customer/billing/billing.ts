@@ -2,12 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import {
-  BillingService,
-  MonthlyBill,
-  PaymentMethod,
-  BillStatus
-} from '../../../services/billing';
+import { BillingService, MonthlyBill, PaymentMethod, BillStatus } from '../../../services/billing.service';
 
 @Component({
   selector: 'app-billing',
@@ -18,6 +13,7 @@ import {
 })
 export class BillingComponent implements OnInit {
   bills: MonthlyBill[] = [];
+  unpaidBills: MonthlyBill[] = [];
   selectedBill?: MonthlyBill;
 
   isLoading = false;
@@ -28,30 +24,65 @@ export class BillingComponent implements OnInit {
   paymentMethod: PaymentMethod = 'CARD';
   paymentAmount?: number;
 
-  constructor(private billingService: BillingService) {}
+  newBillsCount = 0;
+
+  constructor(
+    private billingService: BillingService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
-    this.loadUnpaidBills();
+    this.loadAllBills();
+  }
+
+  loadAllBills(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.billingService.getAllBills().subscribe({
+      next: (allBills: MonthlyBill[]) => {
+        this.bills = allBills.filter(bill => bill.status !== 'CANCELLED');
+        this.unpaidBills = this.bills.filter(bill => bill.status === 'UNPAID');
+
+        this.isLoading = false;
+
+        if (this.unpaidBills.length > 0) {
+          this.selectBill(this.unpaidBills[0]);
+        } else if (this.bills.length > 0) {
+          this.selectBill(this.bills[0]);
+        } else {
+          this.selectedBill = undefined;
+        }
+      },
+      error: (err: any) => {
+        console.error('Erreur chargement factures:', err);
+        this.errorMessage = 'Impossible de charger vos factures. Veuillez réessayer.';
+        this.isLoading = false;
+      }
+    });
   }
 
   loadUnpaidBills(): void {
     this.isLoading = true;
     this.errorMessage = '';
 
-    // On charge toutes les factures (tu peux remettre getUnpaidBills si tu veux)
-    this.billingService.getAllBills().subscribe({
-      next: (bills) => {
-        this.bills = bills;
+    this.billingService.getUnpaidBills().subscribe({
+      next: (unpaidBills: MonthlyBill[]) => {
+        this.unpaidBills = unpaidBills;
+        this.bills = unpaidBills;
+
         this.isLoading = false;
-        if (bills.length > 0) {
-          this.selectBill(bills[0]);
+
+        if (unpaidBills.length > 0) {
+          this.selectBill(unpaidBills[0]);
         } else {
           this.selectedBill = undefined;
         }
       },
-      error: (err) => {
-        console.error(err);
-        this.errorMessage = 'Erreur lors du chargement des factures.';
+      error: (err: any) => {
+        console.error('Erreur chargement factures impayées:', err);
+        this.errorMessage = 'Erreur lors du chargement des factures impayées.';
         this.isLoading = false;
       }
     });
@@ -74,13 +105,29 @@ export class BillingComponent implements OnInit {
 
   paySelectedBill(): void {
     if (!this.selectedBill) {
+      this.errorMessage = 'Aucune facture sélectionnée.';
+      return;
+    }
+
+    if (this.selectedBill.status === 'PAID') {
+      this.errorMessage = 'Cette facture a déjà été payée.';
+      return;
+    }
+
+    if (this.selectedBill.status === 'CANCELLED') {
+      this.errorMessage = 'Cette facture a été annulée.';
       return;
     }
 
     const amount = this.paymentAmount ?? this.selectedBill.totalAmount;
+
     if (amount <= 0) {
       this.errorMessage = 'Le montant doit être supérieur à 0.';
-      this.successMessage = '';
+      return;
+    }
+
+    if (amount > this.selectedBill.totalAmount) {
+      this.errorMessage = `Le montant ne peut pas dépasser ${this.selectedBill.totalAmount} €`;
       return;
     }
 
@@ -89,19 +136,46 @@ export class BillingComponent implements OnInit {
     this.successMessage = '';
 
     this.billingService.payBill(this.selectedBill.id, amount, this.paymentMethod).subscribe({
-      next: (payment) => {
+      next: (payment: any) => {
         this.isPaying = false;
-        this.successMessage = `Paiement de ${payment.amount.toFixed(
-          2
-        )} € effectué avec succès en ${payment.method}.`;
-        this.loadUnpaidBills();
+        this.successMessage = ` Paiement de ${payment.amount.toFixed(2)} € effectué avec succès !`;
+
+        setTimeout(() => {
+          this.loadAllBills();
+        }, 1500);
       },
-      error: (err) => {
-        console.error(err);
+      error: (err: any) => {
+        console.error('Erreur paiement:', err);
         this.isPaying = false;
-        this.errorMessage = 'Erreur lors du paiement de la facture.';
+
+        if (err.status === 400) {
+          this.errorMessage = err.error?.message || 'Données de paiement invalides.';
+        } else if (err.status === 404) {
+          this.errorMessage = 'Facture introuvable.';
+        } else if (err.status === 409) {
+          this.errorMessage = 'Cette facture a déjà été payée.';
+        } else if (err.status === 402) {
+          this.errorMessage = 'Paiement refusé. Vérifiez vos informations de paiement.';
+        } else {
+          this.errorMessage = 'Erreur lors du paiement. Veuillez réessayer.';
+        }
       }
     });
+  }
+
+  // NOUVELLE MÉTHODE POUR OBTENIR LE NOMBRE DE FACTURES IMPAYÉES
+  getUnpaidCount(): number {
+    return this.unpaidBills.length;
+  }
+
+  getMethodLabel(method: PaymentMethod): string {
+    switch (method) {
+      case 'CARD': return 'carte bancaire';
+      case 'PAYPAL': return 'PayPal';
+      case 'BANK_TRANSFER': return 'virement bancaire';
+      case 'CASH': return 'espèces';
+      default: return method;
+    }
   }
 
   getStatusChipClass(status: BillStatus): string {
@@ -110,13 +184,43 @@ export class BillingComponent implements OnInit {
         return 'chip chip-paid';
       case 'CANCELLED':
         return 'chip chip-cancelled';
+      case 'UNPAID':
       default:
         return 'chip chip-unpaid';
     }
   }
 
+  getStatusLabel(status: BillStatus): string {
+    switch (status) {
+      case 'PAID': return 'PAYÉE';
+      case 'CANCELLED': return 'ANNULÉE';
+      case 'UNPAID': return 'IMPAYÉE';
+      default: return status;
+    }
+  }
+
   openPdf(bill: MonthlyBill): void {
-    // À remplacer par ton vrai endpoint PDF plus tard si tu en crées un
-    window.print();
+    const pdfUrl = `http://localhost:8080/api/bills/${bill.id}/pdf`;
+    window.open(pdfUrl, '_blank');
+  }
+
+  reloadBills(): void {
+    this.bills = [];
+    this.unpaidBills = [];
+    this.selectedBill = undefined;
+    this.newBillsCount = 0;
+    this.loadAllBills();
+  }
+
+  goToOrders(): void {
+    this.router.navigate(['/customer/orders']);
+  }
+
+  goToCart(): void {
+    this.router.navigate(['/customer/cart']);
+  }
+
+  goToShop(): void {
+    this.router.navigate(['/shop']);
   }
 }

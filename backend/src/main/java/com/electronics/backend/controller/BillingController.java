@@ -20,13 +20,10 @@ public class BillingController {
         this.billingService = billingService;
     }
 
-    // POST /api/bills?customerId=1&description=Test&quantity=2&unitPrice=100
-    @PostMapping
-    public MonthlyBill createSimpleBill(@RequestParam Long customerId,
-                                        @RequestParam String description,
-                                        @RequestParam Integer quantity,
-                                        @RequestParam BigDecimal unitPrice) {
-        return billingService.createSimpleBill(customerId, description, quantity, unitPrice);
+
+    @PostMapping("/from-order/{orderId}")
+    public MonthlyBill createBillFromOrder(@PathVariable Long orderId) {
+        return billingService.createBillFromOrder(orderId);
     }
 
     // GET /api/bills
@@ -35,44 +32,21 @@ public class BillingController {
         return billingService.getAllBills();
     }
 
+    // GET /api/bills/unpaid
+    @GetMapping("/unpaid")
+    public List<MonthlyBill> getUnpaidBills() {
+        return billingService.getUnpaidBills();
+    }
+
     // GET /api/bills/1
     @GetMapping("/{billId}")
     public MonthlyBill getBill(@PathVariable Long billId) {
         return billingService.getBill(billId);
     }
-    @GetMapping("/unpaid")
-public List<MonthlyBill> getUnpaidBills() {
-    return billingService.getUnpaidBills();
-}
-@PostMapping("/{billId}/cancel")
-public MonthlyBill cancelBill(@PathVariable Long billId) {
-    return billingService.cancelBill(billId);
-}
-    // ================== MÉTHODES DE TEST EN GET ==================
 
-    // GET /api/bills/create?customerId=1&description=Test&quantity=2&unitPrice=100
-    @GetMapping("/create")
-    public MonthlyBill createSimpleBillGet(@RequestParam Long customerId,
-                                           @RequestParam String description,
-                                           @RequestParam Integer quantity,
-                                           @RequestParam BigDecimal unitPrice) {
-        return billingService.createSimpleBill(customerId, description, quantity, unitPrice);
-    }
-
-    // GET /api/bills/{billId}/pay-test?amount=200&method=CARD
-    @GetMapping("/{billId}/pay-test")
-    public Payment payBillGet(@PathVariable Long billId,
-                              @RequestParam BigDecimal amount,
-                              @RequestParam PaymentMethod method) {
-        return billingService.payBill(billId, amount, method);
-    }
-
-
-
-    // GET /api/bills/customer/1
-    @GetMapping("/customer/{customerId}")
-    public List<MonthlyBill> getBillsForCustomer(@PathVariable Long customerId) {
-        return billingService.getBillsForCustomer(customerId);
+    @PostMapping("/{billId}/cancel")
+    public MonthlyBill cancelBill(@PathVariable Long billId) {
+        return billingService.cancelBill(billId);
     }
 
     // POST /api/bills/1/pay?amount=200&method=CARD
@@ -81,5 +55,19 @@ public MonthlyBill cancelBill(@PathVariable Long billId) {
                            @RequestParam BigDecimal amount,
                            @RequestParam PaymentMethod method) {
         return billingService.payBill(billId, amount, method);
+    }
+
+    @PostMapping
+    public MonthlyBill createSimpleBill(@RequestParam Long customerId,
+                                        @RequestParam String description,
+                                        @RequestParam Integer quantity,
+                                        @RequestParam BigDecimal unitPrice) {
+        return billingService.createSimpleBill(customerId, description, quantity, unitPrice);
+    }
+
+
+    @GetMapping("/customer/{customerId}")
+    public List<MonthlyBill> getBillsForCustomer(@PathVariable Long customerId) {
+        return billingService.getBillsForCustomer(customerId);
     }
 }

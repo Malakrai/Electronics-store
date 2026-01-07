@@ -1,14 +1,11 @@
 package com.electronics.backend.services;
 
 import com.electronics.backend.dto.CheckoutRequest;
-import com.electronics.backend.model.Order;
-import com.electronics.backend.model.OrderItem;
-import com.electronics.backend.model.OrderStatus;
-import com.electronics.backend.model.OrderType;
-import com.electronics.backend.model.Product;
+import com.electronics.backend.model.*;
 import com.electronics.backend.repository.OrderRepository;
 import com.electronics.backend.repository.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,13 +16,17 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final BillingService billingService; // AJOUTÉ
 
     public OrderService(OrderRepository orderRepository,
-                        ProductRepository productRepository) {
+                        ProductRepository productRepository,
+                        BillingService billingService) { // AJOUTÉ
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.billingService = billingService; // AJOUTÉ
     }
 
+    @Transactional
     public Order createOrder(CheckoutRequest request) {
 
         if (request == null || request.getItems() == null || request.getItems().isEmpty()) {
@@ -35,7 +36,7 @@ public class OrderService {
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
         order.setType(OrderType.ONLINE);
-        order.setStatus(OrderStatus.PENDING);
+        order.setStatus(OrderStatus.CONFIRMED); // CHANGÉ de PENDING à CONFIRMED
 
         // guest info (facultatif)
         order.setCustomerName(request.getCustomerName());
@@ -65,8 +66,15 @@ public class OrderService {
         }
 
         order.setTotalAmount(total);
+        order.computeTotalCentsFromTotalAmount();
 
-        return orderRepository.save(order);
+        // Sauvegarder la commande
+        Order savedOrder = orderRepository.save(order);
+
+        // CRITIQUE : Créer une facture automatiquement après la commande
+        billingService.createBillFromOrder(savedOrder.getId());
+
+        return savedOrder;
     }
 
     public List<Order> getAllOrders() {

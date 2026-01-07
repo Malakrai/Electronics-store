@@ -32,19 +32,24 @@ export class CartComponent {
   checkout() {
     if (!this.authService.isAuthenticated()) {
       alert('Vous devez être connecté pour passer une commande.');
-
-
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: 'customer/delivery' }
+        queryParams: { returnUrl: '/customer/cart' }
       });
       return;
     }
 
     if (!this.authService.isCustomer()) {
-      alert('Vous devez être connecté en tant que customer pour passer une commande.');
+      alert('Vous devez être connecté en tant que client pour passer une commande.');
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: 'customer/delivery' }
+        queryParams: { returnUrl: '/customer/cart' }
       });
+      return;
+    }
+
+    // Vérifier que le panier n'est pas vide
+    const items = this.cartService.getCurrentItems();
+    if (items.length === 0) {
+      this.errorMsg = 'Votre panier est vide.';
       return;
     }
 
@@ -52,28 +57,53 @@ export class CartComponent {
     this.errorMsg = '';
 
     this.cartService.checkout().subscribe({
-      next: () => {
+      next: (orderResponse) => {
         this.loading = false;
+
+        // Afficher les détails de la commande
+        const orderDetails = `
+Commande validée avec succès !
+
+Numéro de commande: #${orderResponse.orderId}
+Montant total: ${orderResponse.totalAmount.toFixed(2)} €
+Date: ${new Date(orderResponse.orderDate).toLocaleDateString('fr-FR')}
+
+Une facture a été générée et est disponible dans la section "Mes factures".
+        `;
+
+        alert(orderDetails);
+
+        // Vider le panier
         this.cartService.clear();
-        alert('Commande validée avec succès');
-        this.router.navigateByUrl('customer/delivery');
+
+        // IMPORTANT : Rediriger vers la page de facturation
+        this.router.navigate(['/customer/delivery']);
       },
       error: (err) => {
         this.loading = false;
+        console.error('Erreur checkout:', err);
 
         if (err.status === 401) {
           alert('Session expirée. Veuillez vous reconnecter.');
           this.authService.logout();
-          this.router.navigate(['/login'], { queryParams: { returnUrl: '/delivery' } });
+          this.router.navigate(['/login'], {
+            queryParams: { returnUrl: '/customer/cart' }
+          });
         }
         else if (err.status === 403) {
-          alert('Accès interdit. Rôle CUSTOMER requis.');
+          alert('Accès interdit. Rôle CLIENT requis.');
+          this.router.navigate(['/login']);
+        }
+        else if (err.status === 400) {
+          this.errorMsg = err.error?.message || 'Données de commande invalides.';
+        }
+        else if (err.status === 404) {
+          this.errorMsg = 'Produit non disponible.';
         }
         else {
-          this.errorMsg = err?.error || 'Erreur lors du checkout';
+          this.errorMsg = err?.error?.message || 'Erreur lors de la validation de la commande.';
         }
       }
     });
   }
-
 }

@@ -10,4 +10,9 @@ import java.util.List;
 public interface MonthlyBillRepository extends JpaRepository<MonthlyBill, Long> {
 
     List<MonthlyBill> findByCustomerId(Long customerId);
+
+    MonthlyBill findByOrderId(Long orderId);
+
+
+    List<MonthlyBill> findByStatus(String status); // Ajouter cette méthode
 }
