@@ -9,7 +9,7 @@ import { catchError, tap } from 'rxjs/operators';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/api/auth'; // CORRIGÉ : /api/auth
+  private apiUrl = '/api/auth'; // CORRIGÉ : /api/auth
 
   constructor(
     private http: HttpClient,
@@ -37,21 +37,26 @@ export class AuthService {
 
   // Vérification 2FA pour admin
   verifyAdmin2FA(email: string, password: string, totpCode: string): Observable<any> {
-    console.log(' AuthService: Vérification 2FA pour:', email);
-    const request = { email, password, totpCode };
-    return this.http.post<any>(`${this.apiUrl}/admin/verify-2fa`, request).pipe(
-      tap(res => {
-        console.log(' AuthService: Réponse vérification 2FA:', res);
-        if (res.jwtToken) {
-          this.handleLoginSuccess(res);
-        }
-      }),
-      catchError(error => {
-        console.error(' AuthService: Erreur vérification 2FA:', error);
-        return throwError(() => error);
-      })
-    );
-  }
+  const request = {
+    email: email.trim(),
+    password,
+    totpCode: (totpCode || '').trim()
+  };
+
+  console.log('AuthService: Vérification 2FA payload:', request);
+
+  return this.http.post<any>(`${this.apiUrl}/admin/verify-2fa`, request).pipe(
+    tap(res => {
+      console.log('AuthService: Réponse vérification 2FA:', res);
+      if (res.jwtToken) this.handleLoginSuccess(res);
+    }),
+    catchError(error => {
+      console.error('AuthService: Erreur vérification 2FA:', error);
+      return throwError(() => error);
+    })
+  );
+}
+
 
   // Récupérer le QR code admin (si nécessaire)
   getAdminQRCode(email: string, password: string): Observable<any> {

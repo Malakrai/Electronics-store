@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { TitleCasePipe } from '@angular/common';
+import { CommonModule, TitleCasePipe } from '@angular/common';
 import { UsersAdminService } from '../../../services/users.service';
 
 @Component({
@@ -26,7 +25,7 @@ export class UsersAdmin implements OnInit {
     role: ''
   };
 
-  roles = ['magasinier', 'admin', 'manager'];
+  roles = ['MAGASINIER', 'ADMIN', 'MANAGER'];
 
   constructor(private usersService: UsersAdminService) {}
 
@@ -34,24 +33,34 @@ export class UsersAdmin implements OnInit {
     this.loadUsers();
   }
 
+  // ✅ Normalise pour que l'affichage marche même si le backend renvoie userType
+  private normalizeUser(u: any) {
+    return {
+      ...u,
+      firstName: u?.firstName ?? '',
+      lastName: u?.lastName ?? '',
+      email: u?.email ?? '',
+      role: u?.role ?? u?.userType ?? ''  // 🔥 important
+    };
+  }
+
+  private extractUsers(res: any): any[] {
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.data)) return res.data;
+    if (res && Array.isArray(res.users)) return res.users;
+    return [];
+  }
+
   loadUsers() {
     this.loading = true;
+
     this.usersService.getUsers().subscribe({
       next: (res: any) => {
-        console.log('Données reçues:', res);
-        // Vérifier la structure de la réponse
-        if (Array.isArray(res)) {
-          this.users = res;
-        } else if (res && Array.isArray(res.data)) {
-          this.users = res.data; // Si l'API retourne { data: [...] }
-        } else if (res && res.users) {
-          this.users = res.users; // Si l'API retourne { users: [...] }
-        } else {
-          this.users = [];
-          console.warn('Format de données non reconnu:', res);
-        }
-        console.log('Utilisateurs chargés:', this.users.length);
+        const rawUsers = this.extractUsers(res);
+        this.users = rawUsers.map(u => this.normalizeUser(u));
         this.loading = false;
+
+        console.log('Utilisateurs chargés:', this.users);
       },
       error: (err: any) => {
         console.error('Erreur chargement utilisateurs', err);
@@ -68,21 +77,19 @@ export class UsersAdmin implements OnInit {
       return;
     }
 
-    // Vérifier si l'email existe déjà
+    // ⚠️ check local (optionnel)
     if (this.users.some(user => user.email === this.currentUser.email)) {
       alert('Cet email est déjà utilisé.');
       return;
     }
 
+    // ✅ Payload EXACT = AdminCreateUserDto
     const payload = {
       firstName: this.currentUser.firstName,
       lastName: this.currentUser.lastName,
       email: this.currentUser.email,
       password: this.currentUser.password,
-      role: this.currentUser.role,
-      // Ajoutez d'autres champs requis par votre API
-      createdAt: new Date().toISOString(),
-      active: true
+      role: this.currentUser.role
     };
 
     console.log('Création avec payload:', payload);
@@ -91,20 +98,25 @@ export class UsersAdmin implements OnInit {
       next: (res: any) => {
         console.log('Réponse création:', res);
 
-        // Ajouter le nouvel utilisateur à la liste
-        // Vérifier la structure de la réponse
-        const newUser = res.user || res.data || res;
-        if (newUser) {
-          this.users.push(newUser);
-          this.users = [...this.users]; // Créer une nouvelle référence
-        }
+        // Ton controller renvoie {message,id,email,userType}
+        // Donc on reconstruit un user affichable
+        const createdUser = this.normalizeUser({
+          id: res?.id,
+          email: res?.email,
+          userType: res?.userType,
+          firstName: payload.firstName,
+          lastName: payload.lastName
+        });
+
+        this.users.push(createdUser);
+        this.users = [...this.users];
 
         this.resetForm();
         alert('Utilisateur créé avec succès !');
       },
       error: (err: any) => {
         console.error('Erreur création:', err);
-        alert('Erreur lors de la création : ' + (err.error?.message || err.message || 'Erreur inconnue'));
+        alert('Erreur lors de la création : ' + (err.error?.error || err.error?.message || err.message || 'Erreur inconnue'));
       }
     });
   }
@@ -112,12 +124,13 @@ export class UsersAdmin implements OnInit {
   editUser(user: any) {
     this.isEditing = true;
     this.selectedUser = user;
+
     this.currentUser = {
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       email: user.email || '',
-      password: '', // Ne pas afficher le mot de passe
-      role: user.role || ''
+      password: '',
+      role: user.role || user.userType || ''
     };
   }
 
@@ -132,22 +145,32 @@ export class UsersAdmin implements OnInit {
       return;
     }
 
-    const payload = {
+    
+    const payload: any = {
       firstName: this.currentUser.firstName,
       lastName: this.currentUser.lastName,
       email: this.currentUser.email,
-      role: this.currentUser.role,
-      // Inclure le mot de passe seulement s'il a été modifié
-      ...(this.currentUser.password && { password: this.currentUser.password })
+      role: this.currentUser.role
     };
+
+    
+    if (this.currentUser.password && this.currentUser.password.trim().length > 0) {
+      payload.password = this.currentUser.password;
+    }
 
     this.usersService.updateUser(this.selectedUser.id, payload).subscribe({
       next: (res: any) => {
-        // Mettre à jour l'utilisateur dans la liste
+        console.log('Réponse update:', res);
+
         const index = this.users.findIndex(u => u.id === this.selectedUser.id);
         if (index !== -1) {
-          const updatedUser = res.user || res.data || res;
-          this.users[index] = { ...this.users[index], ...updatedUser };
+          const updated = this.normalizeUser({
+            ...this.users[index],
+            ...payload,
+            ...(res?.user || res?.data || res) // si backend renvoie un user complet
+          });
+
+          this.users[index] = updated;
           this.users = [...this.users];
         }
 
@@ -156,27 +179,28 @@ export class UsersAdmin implements OnInit {
       },
       error: (err: any) => {
         console.error('Erreur mise à jour:', err);
-        alert('Erreur lors de la mise à jour : ' + err.error?.message || err.message);
+        alert('Erreur lors de la mise à jour : ' + (err.error?.error || err.error?.message || err.message || 'Erreur inconnue'));
       }
     });
   }
 
   deleteUser(user: any) {
-    if (!user.id) {
+    if (!user?.id) {
       alert('Impossible de supprimer: ID manquant');
       return;
     }
 
-    if (confirm(`Êtes-vous sûr de vouloir supprimer ${user.firstName} ${user.lastName} ?`)) {
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+
+    if (confirm(`Êtes-vous sûr de vouloir supprimer ${fullName || user.email} ?`)) {
       this.usersService.deleteUser(user.id).subscribe({
         next: () => {
-          // Supprimer de la liste locale
           this.users = this.users.filter(u => u.id !== user.id);
           alert('Utilisateur supprimé avec succès.');
         },
         error: (err: any) => {
           console.error('Erreur suppression:', err);
-          alert('Erreur lors de la suppression : ' + err.error?.message || err.message);
+          alert('Erreur lors de la suppression : ' + (err.error?.error || err.error?.message || err.message || 'Erreur inconnue'));
         }
       });
     }

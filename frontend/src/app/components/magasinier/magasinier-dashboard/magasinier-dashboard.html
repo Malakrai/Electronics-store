@@ -1,70 +1,97 @@
-<div class="dashboard-container">
-  <header class="dashboard-header">
-    <div class="container">
-      <div class="header-content">
-        <div class="header-left">
-          <h1>📦 Espace Magasinier</h1>
-          <p>Gestion des stocks et commandes</p>
-        </div>
-        <div class="header-right">
-          <div class="user-info">
-            <span>Bienvenue, <strong>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</strong></span>
-            <button (click)="logout()" class="btn btn-outline">Déconnexion</button>
-          </div>
-        </div>
+<div class="dash luxury">
+
+  <!-- HEADER -->
+  <header class="topbar glass">
+    <div class="brand">
+      <div class="brand-badge">
+        <div class="badge-dot"></div>
       </div>
+      <div>
+        <h1>Espace Magasinier</h1>
+        <p>Gestion des stocks et commandes</p>
+      </div>
+    </div>
+
+    <div class="user">
+      <div class="user-text">
+        <div class="hello">Bienvenue,</div>
+        <div class="name">test malak</div>
+      </div>
+      <button class="btn ghost">Déconnexion</button>
     </div>
   </header>
 
-  <main class="dashboard-main">
-    <div class="container">
-      <div class="stats-grid">
-        <div class="stat-card alert">
-          <div class="stat-icon">⚠️</div>
-          <h3>Stocks Faibles</h3>
-          <p class="stat-number">{{ stats.lowStock }}</p>
-          <p class="stat-label">Produits à réapprovisionner</p>
+  <!-- STATS -->
+  <section class="stats">
+    <div class="stat glass low">
+      <div class="stat-head">
+        <span class="pill warn">Priorité</span>
+      </div>
+      <div class="stat-title">Stocks Faibles</div>
+      <div class="stat-value">8</div>
+      <div class="stat-sub">Produits à réapprovisionner</div>
+    </div>
+
+    <div class="stat glass pending">
+      <div class="stat-head">
+        <span class="pill info">À traiter</span>
+      </div>
+      <div class="stat-title">Commandes en Attente</div>
+      <div class="stat-value">15</div>
+      <div class="stat-sub">À valider / préparer</div>
+    </div>
+
+    <div class="stat glass stock">
+      <div class="stat-head">
+        <span class="pill ok">Total</span>
+      </div>
+      <div class="stat-title">Produits en Stock</div>
+      <div class="stat-value">342</div>
+      <div class="stat-sub">Total disponible</div>
+    </div>
+
+    <div class="stat glass today">
+      <div class="stat-head">
+        <span class="pill purple">Aujourd’hui</span>
+      </div>
+      <div class="stat-title">Commandes Aujourd’hui</div>
+      <div class="stat-value">7</div>
+      <div class="stat-sub">À préparer</div>
+    </div>
+  </section>
+
+  <!-- ACTIONS -->
+  <section class="section">
+    <div class="section-head">
+      <h2>Actions rapides</h2>
+      <p>Accès direct aux modules clés</p>
+    </div>
+
+    <div class="actions">
+      <div class="action glass">
+        <div class="action-text">
+          <div class="action-title">Gestion des Stocks</div>
+          <div class="action-sub">Mettre à jour quantités, seuils, alertes.</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon">📋</div>
-          <h3>Commandes en Attente</h3>
-          <p class="stat-number">{{ stats.pendingOrders }}</p>
-          <p class="stat-label">À traiter</p>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">📦</div>
-          <h3>Produits en Stock</h3>
-          <p class="stat-number">{{ stats.totalProducts }}</p>
-          <p class="stat-label">Total disponible</p>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">📅</div>
-          <h3>Commandes Aujourd'hui</h3>
-          <p class="stat-number">{{ stats.todayOrders }}</p>
-          <p class="stat-label">À préparer</p>
-        </div>
+        <div class="action-arrow">→</div>
       </div>
 
-      <div class="actions-grid">
-        <div class="action-card" (click)="manageInventory()">
-          <div class="action-icon">📦</div>
-          <h4>Gestion des Stocks</h4>
-          <p>Vérifier et mettre à jour les niveaux de stock</p>
-          <button class="btn btn-primary">Gérer les stocks</button>
+      <div class="action glass">
+        <div class="action-text">
+          <div class="action-title">Commandes</div>
+          <div class="action-sub">Préparer, valider, suivre les commandes.</div>
         </div>
-        <div class="action-card" (click)="processOrders()">
-          <div class="action-icon">🚚</div>
-          <h4>Commandes</h4>
-          <p>Traiter et préparer les commandes clients</p>
-          <button class="btn btn-primary">Voir les commandes</button>
+        <div class="action-arrow">→</div>
+      </div>
+
+      <div class="action glass">
+        <div class="action-text">
+          <div class="action-title">Inventaire</div>
+          <div class="action-sub">Consulter l’état complet et exporter.</div>
         </div>
-        <div class="action-card">
-          <div class="action-icon">📊</div>
-          <h4>Inventaire</h4>
-          <p>Consulter l'état complet de l'inventaire</p>
-          <button class="btn btn-primary">Voir l'inventaire</button>
-        </div>
+        <div class="action-arrow">→</div>
       </div>
     </div>
-  </main>
+  </section>
+
 </div>
