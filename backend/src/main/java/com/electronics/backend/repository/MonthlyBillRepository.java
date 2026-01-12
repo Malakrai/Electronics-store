@@ -2,13 +2,15 @@ package com.electronics.backend.repository;
 
 import com.electronics.backend.model.MonthlyBill;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
-@Repository
 public interface MonthlyBillRepository extends JpaRepository<MonthlyBill, Long> {
 
+    Optional<MonthlyBill> findByOrderId(Long orderId);
+
+    // ✅ pour /api/bills/customer/{customerId}
     List<MonthlyBill> findByCustomerId(Long customerId);
 
     MonthlyBill findByOrderId(Long orderId);

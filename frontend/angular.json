@@ -59,6 +59,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
+<<<<<<< HEAD
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
@@ -71,6 +72,22 @@
           },
           "defaultConfiguration": "development"
         },
+=======
+  "builder": "@angular/build:dev-server",
+  "options": {
+    "proxyConfig": "proxy.conf.json"
+  },
+  "configurations": {
+    "production": {
+      "buildTarget": "frontend-angular:build:production"
+    },
+    "development": {
+      "buildTarget": "frontend-angular:build:development"
+    }
+  },
+  "defaultConfiguration": "development"
+},
+>>>>>>> origin/ayoub
         "test": {
           "builder": "@angular/build:unit-test"
         }

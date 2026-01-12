@@ -67,6 +67,7 @@ public class Order {
     private Set<OrderItem> orderItems = new HashSet<>();
 
     public Order() {}
+<<<<<<< HEAD
 
     @PrePersist
     void onCreate() {
@@ -140,4 +141,26 @@ public class Order {
 
     public Set<OrderItem> getOrderItems() { return orderItems; }
     public void setOrderItems(Set<OrderItem> orderItems) { this.orderItems = orderItems; }
+=======
+public Long getId() {
+    return id;
+}
+
+public Customer getCustomer() {
+    return customer;
+}
+
+public Set<OrderItem> getOrderItems() {
+    return orderItems;
+}
+
+public BigDecimal getShippingAmount() {
+    return shippingAmount;
+}
+
+public BigDecimal getTaxAmount() {
+    return taxAmount;
+}
+
+>>>>>>> origin/ayoub
 }

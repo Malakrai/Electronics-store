@@ -33,7 +33,26 @@ public class OrderItem {
     @Column(name="product_name")
     private String productName;
 
+<<<<<<< HEAD
     public OrderItem() {}
+=======
+    public Integer getQuantity() {
+    return quantity;
+}
+
+public BigDecimal getUnitPrice() {
+    return unitPrice;
+}
+
+public BigDecimal getLineTotal() {
+    return lineTotal;
+}
+
+public Product getProduct() {
+    return product;
+}
+
+>>>>>>> origin/ayoub
 
     // ---------------- GETTERS / SETTERS ----------------
 

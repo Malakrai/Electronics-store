@@ -66,4 +66,10 @@ public class MonthlyBill {
         item.setMonthlyBill(this);
         this.items.add(item);
     }
+    public Long getOrderId() { return orderId; }
+    public void setOrderId(Long orderId) { this.orderId = orderId; }
+
+    @Column(name = "order_id")
+private Long orderId;
+
 }
