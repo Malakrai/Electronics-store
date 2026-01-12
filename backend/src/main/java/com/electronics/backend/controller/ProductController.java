@@ -164,7 +164,6 @@ public class ProductController {
         }
     }
 
-    // DELETE /api/products/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         try {

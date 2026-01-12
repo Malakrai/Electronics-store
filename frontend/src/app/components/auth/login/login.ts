@@ -2,9 +2,13 @@ import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../services/auth.service';
-import { LoginRequest } from '../../../models/user.model';
+import {
+  LoginRequest,
+  LoginResponse,
+  AdminLoginResponse
+} from '../../../models/user.model';
 
 @Component({
   selector: 'app-login',
@@ -15,29 +19,21 @@ import { LoginRequest } from '../../../models/user.model';
 })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup;
-
-  errorMessage = '';
-  successMessage = '';
-
-  requiresQrCode = false;
-  qrCodeUrl = '';
-
-  isLoading = false;
-  passwordVisible = false;
-
-  // Stockage temporaire pendant étape 2FA
-  private adminEmail = '';
-  private tempPassword = '';
-
-  // ✅ Empêche double submit / double request 2FA
-  private verifying2fa = false;
-
-  // Pour debug
-  lastResponse: any = {};
+  errorMessage: string = '';
+  successMessage: string = '';
+  requiresQrCode: boolean = false;
+  qrCodeUrl: string = '';
+  isLoading: boolean = false;
+  passwordVisible: boolean = false;
+  isAdminUser: boolean = false;
+  adminEmail: string = '';
+  tempPassword: string = '';
+  lastResponse: any = {}; // Pour debug
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private http: HttpClient,
     private router: Router,
     @Inject(PLATFORM_ID) private platformId: any
   ) {
@@ -49,36 +45,36 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    if (this.authService.isAuthenticated()) {
-      const user = this.authService.getCurrentUser();
-      if (user) this.redirectByRole((user as any).userType);
+    if (isPlatformBrowser(this.platformId)) {
+      if (this.authService.isAuthenticated()) {
+        const user = this.authService.getCurrentUser();
+        if (user) {
+          this.redirectByRole(user.userType);
+        }
+      }
     }
   }
 
   getButtonText(): string {
     if (this.isLoading) return 'Connexion en cours...';
-
     if (this.requiresQrCode) {
-      const code = (this.loginForm.get('totpCode')?.value || '').trim();
-      return code.length === 6 ? 'Vérifier le code' : 'QR Code affiché';
+      const code = this.loginForm.get('totpCode')?.value;
+      return code?.length === 6 ? 'Vérifier le code' : 'QR Code affiché';
     }
-
     return 'Se connecter';
   }
 
   onSubmit(): void {
-    this.clearMessages();
-
     if (this.requiresQrCode) {
+      // Mode vérification 2FA pour admin
       this.verifyAdmin2FA();
     } else {
+      // Mode connexion normale
       this.handleLogin();
     }
   }
 
-  private handleLogin(): void {
+  handleLogin(): void {
     if (this.loginForm.get('email')?.invalid || this.loginForm.get('password')?.invalid) {
       this.markFormGroupTouched();
       this.errorMessage = 'Veuillez remplir tous les champs correctement';
@@ -86,79 +82,97 @@ export class LoginComponent implements OnInit {
     }
 
     this.isLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
 
-    const email = (this.loginForm.get('email')?.value || '').toLowerCase().trim();
+    const email = this.loginForm.get('email')?.value.toLowerCase();
     const password = this.loginForm.get('password')?.value;
 
-    // stock temporaire pour 2FA
+    console.log('🔐 Tentative de connexion:', { email, password: '***' });
+
+    // Stocker les identifiants temporairement
     this.adminEmail = email;
     this.tempPassword = password;
 
-    const loginRequest: LoginRequest = { email, password };
+    const loginRequest: LoginRequest = {
+      email: email,
+      password: password
+    };
 
+    // Appel au backend - UN SEUL APPEL maintenant
     this.authService.login(loginRequest).subscribe({
       next: (response: any) => {
         this.isLoading = false;
-        this.lastResponse = response;
+        this.lastResponse = response; // Pour debug
         console.log('✅ Réponse login complète:', response);
 
-        // ✅ Cas admin avec 2FA et QR dans la réponse
+        // CORRECTION : Vérifier si le QR code est directement dans la réponse
         if (response.userType === 'ADMIN' && response.requires2fa === true && response.qrCodeUrl) {
+          console.log('🔐 Admin avec 2FA - QR code disponible dans la réponse initiale');
+          this.isAdminUser = true;
           this.requiresQrCode = true;
           this.qrCodeUrl = response.qrCodeUrl;
           this.successMessage = response.message || 'Scannez le QR code avec Google Authenticator';
 
-          // désactiver champs pendant 2FA
+          // Désactiver les champs pendant la 2FA
           this.loginForm.get('email')?.disable();
           this.loginForm.get('password')?.disable();
-          return;
-        }
 
-        // ✅ Connexion normale (jwt stocké par AuthService.handleLoginSuccess déjà)
-        if (response.jwtToken || response.token) {
-          this.successMessage = '✅ Connexion réussie! Redirection...';
-          setTimeout(() => this.redirectByRole(response.userType), 500);
-          return;
+        } else if (response.jwtToken) {
+          // Connexion normale réussie (client, magasinier, ou admin sans 2FA)
+          console.log('✅ Connexion normale réussie avec token');
+          this.handleSuccessfulLogin(response);
+        } else if (response.userType === 'ADMIN' && response.requires2fa === true) {
+          // Cas où le backend indique que c'est un admin avec 2FA mais pas de QR code
+          console.log('⚠️ Admin avec 2FA mais QR code manquant, tentative de récupération');
+          this.requestAdminQRCode(email, password);
+        } else {
+          this.errorMessage = response.message || response.error || 'Réponse inattendue du serveur';
         }
-
-        // ✅ Admin avec 2FA mais pas de QR → demander via endpoint dédié
-        if (response.userType === 'ADMIN' && response.requires2fa === true) {
-          this.requestAdminQRCode();
-          return;
-        }
-
-        this.errorMessage = response.message || response.error || 'Réponse inattendue du serveur';
       },
       error: (error: HttpErrorResponse) => {
         this.isLoading = false;
-        this.handleLoginError(error);
+        this.handleLoginError(error, false);
       }
     });
   }
 
-  private requestAdminQRCode(): void {
+  requestAdminQRCode(email: string, password: string): void {
     this.isLoading = true;
 
-    const email = this.adminEmail;
-    const password = this.tempPassword;
+    const request = {
+      email: email,
+      password: password
+    };
 
-    this.authService.getAdminQRCode(email, password).subscribe({
+    console.log('🔄 Demande de QR code pour admin:', email);
+
+    // CORRECTION : L'endpoint est /admin/qrcode, pas /admin/login
+    this.http.post<any>('http://localhost:8080/api/auth/admin/qrcode', request).subscribe({
       next: (response: any) => {
         this.isLoading = false;
         console.log('✅ Réponse QR code:', response);
 
-        const url = response.qrCodeUrl || response.qrCodeUri;
-        if (url) {
+        if (response.qrCodeRequired && response.qrCodeUrl) {
+          // Afficher le QR code
           this.requiresQrCode = true;
-          this.qrCodeUrl = url;
+          this.qrCodeUrl = response.qrCodeUrl;
           this.successMessage = response.message || 'Scannez le QR code avec Google Authenticator';
+
+          // Désactiver les champs pendant la 2FA
+          this.loginForm.get('email')?.disable();
+          this.loginForm.get('password')?.disable();
+        } else if (response.qrCodeUri) {
+          // Alternative: si le backend retourne qrCodeUri
+          this.requiresQrCode = true;
+          this.qrCodeUrl = response.qrCodeUri;
+          this.successMessage = 'Scannez le QR code avec Google Authenticator';
 
           this.loginForm.get('email')?.disable();
           this.loginForm.get('password')?.disable();
-          return;
+        } else {
+          this.errorMessage = 'QR code non disponible dans la réponse';
         }
-
-        this.errorMessage = 'QR code non disponible dans la réponse';
       },
       error: (error: HttpErrorResponse) => {
         this.isLoading = false;
@@ -169,73 +183,145 @@ export class LoginComponent implements OnInit {
   }
 
   verifyAdmin2FA(): void {
-    if (this.verifying2fa) return;
-
-    const totpCode = (this.loginForm.get('totpCode')?.value || '').trim();
-    if (totpCode.length !== 6) {
+    const totpCode = this.loginForm.get('totpCode')?.value;
+    if (!totpCode || totpCode.length !== 6) {
       this.errorMessage = 'Veuillez entrer un code à 6 chiffres';
       return;
     }
 
     this.isLoading = true;
-    this.verifying2fa = true;
 
+    // Utiliser le mot de passe stocké temporairement
+    const request = {
+      email: this.adminEmail,
+      password: this.tempPassword,
+      totpCode: totpCode
+    };
+
+    console.log('🔐 Vérification 2FA pour admin:', this.adminEmail);
+
+    // Utiliser le service AuthService au lieu de http directement
     this.authService.verifyAdmin2FA(this.adminEmail, this.tempPassword, totpCode).subscribe({
       next: (response: any) => {
         this.isLoading = false;
-        this.verifying2fa = false;
-
         console.log('✅ Réponse vérification 2FA:', response);
 
         if (response.jwtToken) {
-          this.successMessage = '✅ Authentification 2FA réussie ! Redirection...';
-
-          // Nettoyage password temporaire
+          this.handleAdminSuccessfulLogin(response);
+          // Nettoyer le mot de passe temporaire
           this.tempPassword = '';
-
-          setTimeout(() => this.redirectByRole('ADMIN'), 500);
-          return;
+        } else {
+          this.errorMessage = response.error || 'Code 2FA invalide ou expiré';
         }
-
-        this.errorMessage = response.error || 'Code 2FA invalide ou expiré';
       },
       error: (error: HttpErrorResponse) => {
         this.isLoading = false;
-        this.verifying2fa = false;
-
         console.error('❌ Erreur vérification 2FA:', error);
-        this.errorMessage = error.error?.error || 'Erreur lors de la vérification 2FA';
+
+        if (error.status === 401 || error.status === 400) {
+          this.errorMessage = error.error?.error || 'Code 2FA invalide';
+        } else if (error.status === 403) {
+          this.errorMessage = 'Trop de tentatives. Veuillez réessayer plus tard.';
+        } else if (error.status === 0) {
+          this.errorMessage = 'Serveur inaccessible. Vérifiez votre connexion.';
+        } else {
+          this.errorMessage = `Erreur ${error.status}: ${error.error?.error || 'Erreur lors de la vérification'}`;
+        }
       }
     });
   }
 
   onTotpCodeChange(): void {
-    const code = (this.loginForm.get('totpCode')?.value || '').trim();
-
-    // auto submit safe
-    if (this.requiresQrCode && code.length === 6 && !this.verifying2fa && !this.isLoading) {
-      setTimeout(() => this.verifyAdmin2FA(), 150);
+    const code = this.loginForm.get('totpCode')?.value;
+    if (code && code.length === 6 && this.requiresQrCode) {
+      // Auto-submit quand le code est complet
+      setTimeout(() => {
+        this.verifyAdmin2FA();
+      }, 300);
     }
   }
 
+  onForgotPassword(): void {
+    this.router.navigate(['/forgot-password']);
+  }
+
+  // Retour au formulaire de connexion
   goBackToLogin(): void {
     this.requiresQrCode = false;
     this.qrCodeUrl = '';
-    this.clearMessages();
-
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.isAdminUser = false;
     this.loginForm.get('totpCode')?.reset();
     this.loginForm.get('email')?.enable();
     this.loginForm.get('password')?.enable();
-
-    this.adminEmail = '';
     this.tempPassword = '';
-    this.verifying2fa = false;
+  }
+
+  private handleSuccessfulLogin(response: any): void {
+    this.successMessage = '✅ Connexion réussie! Redirection...';
+
+    // CORRECTION : Le backend retourne jwtToken, pas token
+    const token = response.jwtToken || response.token;
+
+    if (isPlatformBrowser(this.platformId) && token) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify({
+        email: response.email,
+        userId: response.userId,
+        userType: response.userType,
+        firstName: response.firstName,
+        lastName: response.lastName,
+        requires2fa: response.requires2fa || false
+      }));
+    }
+
+    setTimeout(() => {
+      this.redirectByRole(response.userType);
+    }, 1500);
+  }
+
+  private handleAdminSuccessfulLogin(response: any): void {
+    this.successMessage = '✅ Connexion admin réussie! Redirection...';
+
+    if (isPlatformBrowser(this.platformId) && response.jwtToken) {
+      localStorage.setItem('token', response.jwtToken);
+      localStorage.setItem('user', JSON.stringify({
+        email: response.email || this.adminEmail,
+        userType: response.userType || 'ADMIN',
+        roles: response.roles || ['ROLE_ADMIN']
+      }));
+    }
+
+    setTimeout(() => {
+      this.router.navigate(['/admin/dashboard']);
+    }, 1500);
+  }
+
+  private handleLoginError(error: HttpErrorResponse, isAdmin: boolean): void {
+    this.isLoading = false;
+    console.error('❌ Erreur connexion:', error);
+
+    if (error.status === 400) {
+      this.errorMessage = error.error?.error || 'Identifiants incorrects';
+    } else if (error.status === 401) {
+      this.errorMessage = 'Email ou mot de passe incorrect';
+    } else if (error.status === 403) {
+      this.errorMessage = isAdmin ? 'Accès admin refusé' : 'Accès refusé';
+    } else if (error.status === 404) {
+      this.errorMessage = 'Utilisateur non trouvé';
+    } else if (error.status === 0) {
+      this.errorMessage = 'Serveur inaccessible. Vérifiez que le backend est démarré.';
+    } else if (error.status === 500) {
+      this.errorMessage = 'Erreur serveur. Contactez l\'administrateur.';
+    } else {
+      this.errorMessage = `Erreur ${error.status}: ${error.error?.error || error.statusText}`;
+    }
   }
 
   private redirectByRole(userType: string): void {
     console.log('🎯 Redirection pour:', userType);
-
-    switch ((userType || '').toUpperCase()) {
+    switch (userType?.toUpperCase()) {
       case 'ADMIN':
         this.router.navigate(['/admin/dashboard']);
         break;
@@ -243,29 +329,19 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/magasinier/dashboard']);
         break;
       case 'CUSTOMER':
-        // ✅ chez toi c'est /catalog
-        this.router.navigate(['/catalog']);
+        this.router.navigate(['/customer/catalog']);
         break;
       default:
-        this.router.navigate(['/catalog']);
+        this.router.navigate(['/dashboard']);
     }
-  }
-
-  private handleLoginError(error: HttpErrorResponse): void {
-    console.error('❌ Erreur connexion:', error);
-
-    if (error.status === 400) this.errorMessage = error.error?.error || 'Identifiants incorrects';
-    else if (error.status === 401) this.errorMessage = 'Email ou mot de passe incorrect';
-    else if (error.status === 403) this.errorMessage = 'Accès refusé';
-    else if (error.status === 404) this.errorMessage = 'Utilisateur non trouvé';
-    else if (error.status === 0) this.errorMessage = 'Serveur inaccessible. Vérifiez que le backend est démarré.';
-    else if (error.status === 500) this.errorMessage = 'Erreur serveur.';
-    else this.errorMessage = `Erreur ${error.status}: ${error.error?.error || error.statusText}`;
   }
 
   private markFormGroupTouched(): void {
     Object.keys(this.loginForm.controls).forEach(key => {
-      this.loginForm.get(key)?.markAsTouched();
+      const control = this.loginForm.get(key);
+      if (control) {
+        control.markAsTouched();
+      }
     });
   }
 
@@ -277,4 +353,7 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
   }
+
+  protected readonly console = console;
 }
+

@@ -23,6 +23,7 @@ public class MagasinierUpdateDto {
 
     private String phone;
     private String address;
+    private Boolean enabled; // Added this field
 
     // Getters and Setters
     public String getFirstName() { return firstName; }
@@ -42,4 +43,7 @@ public class MagasinierUpdateDto {
 
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
+
+    public Boolean getEnabled() { return enabled; }
+    public void setEnabled(Boolean enabled) { this.enabled = enabled; }
 }

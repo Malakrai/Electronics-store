@@ -48,7 +48,7 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-    
+
     public List<Product> searchByName(String name) {
         return productRepository.findByNameContainingIgnoreCase(name);
     }
@@ -60,4 +60,5 @@ public class ProductService {
     public List<Product> getByStatus(Boolean isActive) {
         return productRepository.findByIsActive(isActive);
     }
+
 }

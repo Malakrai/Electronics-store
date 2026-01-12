@@ -103,7 +103,6 @@ public class AuthController {
                 return ResponseEntity.ok(response);
             }
 
-            // Utilisateurs sans 2FA (clients, magasiniers, admins sans 2FA)
             String jwt = jwtUtil.generateToken(user.getEmail(), user.getUserType());
 
             Map<String, Object> response = new HashMap<>();

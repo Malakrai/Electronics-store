@@ -1,7 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
-import { LoginRequest, LoginResponse, AdminLoginResponse, User } from '../models/user.model';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
@@ -9,87 +8,75 @@ import { catchError, tap } from 'rxjs/operators';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = '/api/auth'; // CORRIGÉ : /api/auth
+  private apiUrl = '/api/auth';
 
   constructor(
     private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: any
   ) {}
 
-  // Méthode principale pour /api/auth/login
-  login(data: LoginRequest): Observable<any> {
-    console.log(' AuthService: Appel à /login avec:', data.email);
+  // Méthode de connexion
+  login(data: any): Observable<any> {
+    console.log('AuthService: Login avec:', data.email);
     return this.http.post<any>(`${this.apiUrl}/login`, data).pipe(
       tap(res => {
-        console.log(' AuthService: Réponse login reçue:', res);
-
-        // Stocker le token si la connexion est réussie (sans 2FA)
+        console.log('AuthService: Réponse login:', res);
         if (!res.requires2fa && (res.jwtToken || res.token)) {
           this.handleLoginSuccess(res);
         }
       }),
       catchError(error => {
-        console.error(' AuthService: Erreur login:', error);
+        console.error('AuthService: Erreur login:', error);
         return throwError(() => error);
       })
     );
   }
 
-  // Vérification 2FA pour admin
+  // Vérification 2FA
   verifyAdmin2FA(email: string, password: string, totpCode: string): Observable<any> {
-  const request = {
-    email: email.trim(),
-    password,
-    totpCode: (totpCode || '').trim()
-  };
+    const request = {
+      email: email.trim(),
+      password,
+      totpCode: (totpCode || '').trim()
+    };
 
-  console.log('AuthService: Vérification 2FA payload:', request);
-
-  return this.http.post<any>(`${this.apiUrl}/admin/verify-2fa`, request).pipe(
-    tap(res => {
-      console.log('AuthService: Réponse vérification 2FA:', res);
-      if (res.jwtToken) this.handleLoginSuccess(res);
-    }),
-    catchError(error => {
-      console.error('AuthService: Erreur vérification 2FA:', error);
-      return throwError(() => error);
-    })
-  );
-}
-
-
-  // Récupérer le QR code admin (si nécessaire)
-  getAdminQRCode(email: string, password: string): Observable<any> {
-    console.log(' AuthService: Demande QR code pour:', email);
-    const request = { email, password };
-    return this.http.post<any>(`${this.apiUrl}/admin/qrcode`, request).pipe(
-      tap(res => console.log(' AuthService: QR code reçu')),
+    return this.http.post<any>(`${this.apiUrl}/admin/verify-2fa`, request).pipe(
+      tap(res => {
+        console.log('AuthService: Réponse 2FA:', res);
+        if (res.jwtToken) this.handleLoginSuccess(res);
+      }),
       catchError(error => {
-        console.error(' AuthService: Erreur QR code:', error);
+        console.error('AuthService: Erreur 2FA:', error);
         return throwError(() => error);
       })
     );
   }
 
-
+  // Gestion succès login
   handleLoginSuccess(res: any) {
     if (isPlatformBrowser(this.platformId)) {
       const token = res.jwtToken || res.token;
       if (token) {
         localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify({
+
+        const userData = {
           email: res.email,
           userType: res.userType,
           firstName: res.firstName,
           lastName: res.lastName,
           userId: res.userId,
-          roles: res.roles || []
-        }));
-        console.log(' AuthService: Session stockée avec succès');
+          roles: res.roles || [],
+          role: res.role || res.userType,
+          authorities: res.authorities || []
+        };
+
+        localStorage.setItem('user', JSON.stringify(userData));
+        console.log('AuthService: Session stockée:', userData);
       }
     }
   }
 
+  // Récupérer token
   getToken(): string | null {
     if (isPlatformBrowser(this.platformId)) {
       return localStorage.getItem('token');
@@ -97,7 +84,8 @@ export class AuthService {
     return null;
   }
 
-  getCurrentUser(): User | null {
+  // Récupérer utilisateur courant
+  getCurrentUser(): any {
     if (isPlatformBrowser(this.platformId)) {
       const userStr = localStorage.getItem('user');
       try {
@@ -110,55 +98,73 @@ export class AuthService {
     return null;
   }
 
+  // Vérifier authentification
   isAuthenticated(): boolean {
     const token = this.getToken();
-    const hasToken = !!token;
-    return hasToken;
+    return !!token;
   }
 
+  // Déconnexion
   logout() {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      console.log(' AuthService: Déconnexion effectuée');
+      console.log('AuthService: Déconnexion effectuée');
     }
   }
 
-  // Méthode pour vérifier le statut du token (optionnel)
-  validateToken(): Observable<any> {
-    const token = this.getToken();
-    if (!token) {
-      return throwError(() => new Error('No token available'));
+  // Normaliser rôle
+  private normalizeRole(role: string | undefined | null): string {
+    if (!role) return '';
+
+    role = role.toUpperCase();
+
+    if (role.startsWith('ROLE_')) {
+      return role.substring(5);
     }
-    return this.http.post<any>(`${this.apiUrl}/validate-token`, { token });
+
+    return role;
   }
+
+  // Récupérer rôle utilisateur
   getUserRole(): string | null {
     const user = this.getCurrentUser();
     if (!user) return null;
 
-    // Cas 1 : roles = ["CUSTOMER"]
-    if (user.roles && user.roles.length > 0) {
-      return user.roles[0];
-    }
+    const possibleSources = [
+      user.roles?.[0],
+      user.userType,
+      (user as any).role,
+      (user as any).authorities?.[0],
+      (user as any).authority
+    ];
 
-    // Cas 2 : userType = "CUSTOMER"
-    if ((user as any).userType) {
-      return (user as any).userType;
+    for (const source of possibleSources) {
+      if (source) {
+        return this.normalizeRole(source);
+      }
     }
 
     return null;
   }
 
-  isCustomer(): boolean {
-    return this.getUserRole() === 'CUSTOMER';
+  // Vérifier rôle
+  hasRole(expectedRole: string): boolean {
+    const userRole = this.getUserRole();
+    const normalizedExpected = this.normalizeRole(expectedRole);
+    return userRole === normalizedExpected;
   }
 
+  // Méthodes spécifiques de rôle
   isAdmin(): boolean {
-    return this.getUserRole() === 'ADMIN';
+    return this.hasRole('ADMIN');
+  }
+
+  isCustomer(): boolean {
+    return this.hasRole('CUSTOMER');
   }
 
   isMagasinier(): boolean {
-    return this.getUserRole() === 'MAGASINIER';
+    return this.hasRole('MAGASINIER');
   }
-
 }

@@ -4,8 +4,6 @@ import com.electronics.backend.dto.AdminRegistrationDto;
 import com.electronics.backend.dto.CustomerRegistrationDto;
 import com.electronics.backend.dto.MagasinierCreationDto;
 import com.electronics.backend.dto.MagasinierUpdateDto;
-import com.electronics.backend.dto.AdminCreateUserDto;
-import com.electronics.backend.dto.AdminUpdateUserDto;
 import com.electronics.backend.model.Admin;
 import com.electronics.backend.model.Customer;
 import com.electronics.backend.model.Magasinier;
@@ -14,13 +12,16 @@ import com.electronics.backend.repository.AdminRepository;
 import com.electronics.backend.repository.CustomerRepository;
 import com.electronics.backend.repository.MagasinierRepository;
 import com.electronics.backend.repository.UserRepository;
+import com.electronics.backend.dto.AdminCreateUserDto;
+import com.electronics.backend.dto.AdminUpdateUserDto;
+import com.electronics.backend.model.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
-@Transactional
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -113,8 +114,6 @@ public class AuthService {
         return customerRepository.save(customer);
     }
 
-    // ========== MÉTHODES GÉNÉRIQUES (leur version) ==========
-
     @Transactional
     public User adminCreateUser(AdminCreateUserDto dto) {
         if (userRepository.existsByEmail(dto.getEmail())) {
@@ -141,12 +140,82 @@ public class AuthService {
                 m.setEmail(dto.getEmail());
                 m.setPassword(passwordEncoder.encode(dto.getPassword()));
                 m.setEnabled(true);
+
                 return magasinierRepository.save(m);
             }
 
             default -> throw new RuntimeException("Role invalide: " + dto.getRole());
         }
     }
+
+    // ========== MAGASINIER SPECIFIC METHODS ==========
+
+    @Transactional
+    public Magasinier createMagasinier(MagasinierCreationDto dto) {
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("Email already used");
+        }
+
+        Magasinier magasinier = new Magasinier();
+        magasinier.setFirstName(dto.getFirstName());
+        magasinier.setLastName(dto.getLastName());
+        magasinier.setEmail(dto.getEmail());
+        magasinier.setPassword(passwordEncoder.encode(dto.getPassword()));
+        magasinier.setEnabled(true);
+
+        // Set additional fields if provided
+        if (dto.getPhone() != null) {
+            magasinier.setPhone(dto.getPhone());
+        }
+        if (dto.getAddress() != null) {
+            magasinier.setAddress(dto.getAddress());
+        }
+
+        return magasinierRepository.save(magasinier);
+    }
+
+    public List<Magasinier> getAllMagasiniers() {
+        return magasinierRepository.findAll();
+    }
+
+    public Magasinier getMagasinierById(Long id) {
+        return magasinierRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Magasinier not found with id: " + id));
+    }
+
+    @Transactional
+    public Magasinier updateMagasinier(Long id, MagasinierUpdateDto dto) {
+        Magasinier magasinier = getMagasinierById(id);
+
+        if (dto.getEmail() != null && !dto.getEmail().equalsIgnoreCase(magasinier.getEmail())) {
+            if (userRepository.existsByEmail(dto.getEmail())) {
+                throw new RuntimeException("Email already used");
+            }
+            magasinier.setEmail(dto.getEmail());
+        }
+
+        if (dto.getFirstName() != null) magasinier.setFirstName(dto.getFirstName());
+        if (dto.getLastName() != null) magasinier.setLastName(dto.getLastName());
+        if (dto.getPhone() != null) magasinier.setPhone(dto.getPhone());
+        if (dto.getAddress() != null) magasinier.setAddress(dto.getAddress());
+        if (dto.getEnabled() != null) magasinier.setEnabled(dto.getEnabled());
+
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            magasinier.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+
+        return magasinierRepository.save(magasinier);
+    }
+
+    @Transactional
+    public void deleteMagasinier(Long id) {
+        if (!magasinierRepository.existsById(id)) {
+            throw new RuntimeException("Magasinier not found with id: " + id);
+        }
+        magasinierRepository.deleteById(id);
+    }
+
+    // ========== GENERAL USER METHODS ==========
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -181,27 +250,5 @@ public class AuthService {
             throw new RuntimeException("User not found");
         }
         userRepository.deleteById(id);
-    }
-
-    // ========== MÉTHODES SPÉCIFIQUES MAGASINIER (votre version - optionnel) ==========
-    // Vous pouvez garder ces méthodes si votre frontend les utilise
-
-    @Transactional
-    public Magasinier createMagasinier(MagasinierCreationDto dto) {
-        // Convertir en AdminCreateUserDto et utiliser adminCreateUser
-        AdminCreateUserDto adminDto = new AdminCreateUserDto();
-        adminDto.setFirstName(dto.getFirstName());
-        adminDto.setLastName(dto.getLastName());
-        adminDto.setEmail(dto.getEmail());
-        adminDto.setPassword(dto.getPassword());
-        adminDto.setRole("MAGASINIER");
-
-        User user = adminCreateUser(adminDto);
-        return (Magasinier) user;
-    }
-
-    @Transactional(readOnly = true)
-    public List<Magasinier> getAllMagasiniers() {
-        return magasinierRepository.findAll();
     }
 }

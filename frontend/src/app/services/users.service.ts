@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class UsersAdminService {
@@ -11,37 +10,47 @@ export class UsersAdminService {
 
   private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('token');
-    const headers = new HttpHeaders({
+    let headers = new HttpHeaders({
       'Content-Type': 'application/json'
     });
 
     if (token) {
-      return headers.set('Authorization', `Bearer ${token}`);
+      headers = headers.set('Authorization', `Bearer ${token}`);
     }
+
+    console.log('Headers envoyés:', headers);
     return headers;
   }
 
+  // Récupérer tous les magasiniers
   getMagasiniers(): Observable<any[]> {
+    console.log('Appel GET à:', `${this.baseUrl}/magasiniers`);
     return this.http.get<any[]>(`${this.baseUrl}/magasiniers`, {
       headers: this.getHeaders()
     });
   }
 
+  // Créer un magasinier
   createMagasinier(data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/magasiniers`, data, {
+    console.log('Appel POST à:', `${this.baseUrl}/magasiniers`, data);
+    return this.http.post<any>(`${this.baseUrl}/magasiniers`, data, {
       headers: this.getHeaders()
     });
   }
 
-  updateUser(id: string, data: any): Observable<any> {
-    return this.http.put(`${this.baseUrl}/magasiniers/${id}`, data, {
+  // Mettre à jour un magasinier
+  updateMagasinier(id: string, data: any): Observable<any> {
+    console.log('Appel PUT à:', `${this.baseUrl}/magasiniers/${id}`, data);
+    return this.http.put<any>(`${this.baseUrl}/magasiniers/${id}`, data, {
       headers: this.getHeaders()
     });
   }
 
-  deleteUser(id: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/magasiniers/${id}`, {
+  // Supprimer un magasinier
+  deleteMagasinier(id: string): Observable<any> {
+    console.log('Appel DELETE à:', `${this.baseUrl}/magasiniers/${id}`);
+    return this.http.delete<any>(`${this.baseUrl}/magasiniers/${id}`, {
       headers: this.getHeaders()
     });
-
+  }
 }

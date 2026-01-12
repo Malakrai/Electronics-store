@@ -6,16 +6,12 @@ import { ApiService } from '../../../services/api.service';
 import { ProductService } from '../../../services/product.service';
 import { User } from '../../../models/user.model';
 
-// Import des animations (leur ajout)
-import { fadeUp, staggerList, cardPop } from './dashboard.animations';
-
 @Component({
   selector: 'app-magasinier-dashboard',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './magasinier-dashboard.html',
-  styleUrls: ['./magasinier-dashboard.css'],
-  animations: [fadeUp, staggerList, cardPop]  // Leur ajout
+  styleUrls: ['./magasinier-dashboard.css']
 })
 export class MagasinierDashboard implements OnInit {
   currentUser: User | null = null;
@@ -28,9 +24,6 @@ export class MagasinierDashboard implements OnInit {
     todayOrders: 0
   };
 
-  // Leur ajout - alertes bas stock
-  lowStockAlerts: any[] = [];
-
   isLoading = true;
   errorMessage = '';
   private callsCompleted = 0;
@@ -41,7 +34,7 @@ export class MagasinierDashboard implements OnInit {
     private apiService: ApiService,
     private productService: ProductService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef // Ajoutez ceci
   ) {}
 
   ngOnInit(): void {
@@ -54,30 +47,22 @@ export class MagasinierDashboard implements OnInit {
     this.errorMessage = '';
     this.callsCompleted = 0;
 
+    console.log('Début du chargement des statistiques...');
+
     // 1. Charger les produits
     this.productService.getProducts().subscribe({
       next: (products) => {
+        console.log('✅ Produits chargés:', products?.length || 0);
         this.stats.totalProducts = products?.length || 0;
 
-        // Calculer produits en bas stock
-        const lowStockProducts = products?.filter(
+        this.stats.lowStock = products?.filter(
           (product: any) => (product.stockQuantity || product.stock || 0) < 10
-        ) || [];
-
-        this.stats.lowStock = lowStockProducts.length;
-
-        // Préparer les alertes (leur fonctionnalité)
-        this.lowStockAlerts = lowStockProducts.map((product: any) => ({
-          name: product.name || product.productName,
-          category: product.category || 'Non catégorisé',
-          stock: product.stockQuantity || product.stock || 0,
-          threshold: 10
-        }));
+        ).length || 0;
 
         this.markCallCompleted();
       },
       error: (error) => {
-        console.error('Erreur chargement produits:', error);
+        console.error('❌ Erreur chargement produits:', error);
         this.errorMessage = 'Erreur lors du chargement des produits';
         this.markCallCompleted();
       }
@@ -86,6 +71,8 @@ export class MagasinierDashboard implements OnInit {
     // 2. Charger les commandes
     this.apiService.getAllBills().subscribe({
       next: (bills) => {
+        console.log('✅ Factures chargées:', bills?.length || 0);
+
         this.stats.pendingOrders = bills?.filter(
           (bill: any) => bill.status === 'PENDING' || bill.status === 'UNPAID'
         ).length || 0;
@@ -99,7 +86,7 @@ export class MagasinierDashboard implements OnInit {
         this.markCallCompleted();
       },
       error: (error) => {
-        console.error('Erreur chargement commandes:', error);
+        console.error('❌ Erreur chargement commandes:', error);
         this.errorMessage = 'Erreur lors du chargement des commandes';
         this.markCallCompleted();
       }
@@ -108,13 +95,15 @@ export class MagasinierDashboard implements OnInit {
 
   private markCallCompleted(): void {
     this.callsCompleted++;
+    console.log(`📊 Appels terminés: ${this.callsCompleted}/${this.totalCalls}`);
+
     if (this.callsCompleted >= this.totalCalls) {
+      console.log('✅ Tous les appels sont terminés');
       this.isLoading = false;
-      this.cdr.detectChanges();
+      this.cdr.detectChanges(); // FORCE la détection de changement
     }
   }
 
-  // Vos méthodes originales
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
@@ -126,9 +115,5 @@ export class MagasinierDashboard implements OnInit {
 
   processOrders(): void {
     this.router.navigate(['/magasinier/commandes']);
-  }
-
-  restock(productName: string): void {
-    alert(`Réapprovisionnement demandé pour: ${productName}`);
   }
 }
