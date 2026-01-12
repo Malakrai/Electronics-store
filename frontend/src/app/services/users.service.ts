@@ -3,9 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class UsersAdminService {
   private baseUrl = 'http://localhost:8080/api/admin';
 
@@ -45,5 +43,5 @@ export class UsersAdminService {
     return this.http.delete(`${this.baseUrl}/magasiniers/${id}`, {
       headers: this.getHeaders()
     });
-  }
+
 }

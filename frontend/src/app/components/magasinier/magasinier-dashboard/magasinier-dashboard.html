@@ -1,99 +1,108 @@
-<div class="dashboard-container">
-  <header class="dashboard-header">
-    <div class="container">
-      <div class="header-content">
-        <div class="header-left">
-          <h1>📦 Espace Magasinier</h1>
-          <p>Gestion des stocks et commandes</p>
-        </div>
-        <div class="header-right">
-          <div class="user-info">
-            <span>Bienvenue, <strong>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</strong></span>
-            <button (click)="logout()" class="btn btn-outline">Déconnexion</button>
-          </div>
-        </div>
+<div class="dash luxury">
+
+  <!-- HEADER - Gardez votre version modifiée -->
+  <header class="topbar glass">
+    <div class="brand">
+      <div class="brand-badge">
+        <div class="badge-dot"></div>
       </div>
+      <div>
+        <h1>Espace Magasinier</h1>
+        <p>Gestion des stocks et commandes</p>
+      </div>
+    </div>
+
+    <div class="user">
+      <div class="user-text">
+        <div class="hello">Bienvenue,</div>
+        <div class="name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</div>
+      </div>
+      <button class="btn ghost" (click)="logout()">Déconnexion</button>
     </div>
   </header>
 
   <main class="dashboard-main">
-    <div class="container">
-      <!-- Indicateur de chargement SIMPLE -->
-      <div *ngIf="isLoading" style="text-align: center; padding: 3rem;">
-        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-        <p>Chargement en cours...</p>
-        <p><small>Veuillez patienter</small></p>
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Chargement en cours...</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="!isLoading && errorMessage" class="error-message">
+      ⚠️ {{ errorMessage }}
+    </div>
+
+    <!-- STATS - Adaptez leur design avec vos données -->
+    <section class="stats" *ngIf="!isLoading">
+      <div class="stat glass low">
+        <div class="stat-head">
+          <span class="pill warn">Priorité</span>
+        </div>
+        <div class="stat-title">Stocks Faibles</div>
+        <div class="stat-value">{{ stats.lowStock }}</div>
+        <div class="stat-sub">Produits à réapprovisionner</div>
       </div>
 
-      <!-- Contenu QUAND chargé -->
-      <div *ngIf="!isLoading">
-        <!-- Message d'erreur -->
-        <div *ngIf="errorMessage" style="background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-          ⚠️ {{ errorMessage }}
+      <div class="stat glass pending">
+        <div class="stat-head">
+          <span class="pill info">À traiter</span>
         </div>
+        <div class="stat-title">Commandes en Attente</div>
+        <div class="stat-value">{{ stats.pendingOrders }}</div>
+        <div class="stat-sub">À valider / préparer</div>
+      </div>
 
-        <!-- Statistiques -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 2rem 0;">
-          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <div style="font-size: 2rem;">⚠️</div>
-            <h3 style="margin: 0.5rem 0;">Stocks Faibles</h3>
-            <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0;">{{ stats.lowStock }}</p>
-            <p style="color: #666; margin: 0;">Produits à réapprovisionner</p>
-          </div>
-
-          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <div style="font-size: 2rem;">📋</div>
-            <h3 style="margin: 0.5rem 0;">Commandes en Attente</h3>
-            <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0;">{{ stats.pendingOrders }}</p>
-            <p style="color: #666; margin: 0;">À traiter</p>
-          </div>
-
-          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <div style="font-size: 2rem;">📦</div>
-            <h3 style="margin: 0.5rem 0;">Produits en Stock</h3>
-            <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0;">{{ stats.totalProducts }}</p>
-            <p style="color: #666; margin: 0;">Total disponible</p>
-          </div>
-
-          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <div style="font-size: 2rem;">📅</div>
-            <h3 style="margin: 0.5rem 0;">Commandes Aujourd'hui</h3>
-            <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0;">{{ stats.todayOrders }}</p>
-            <p style="color: #666; margin: 0;">À préparer</p>
-            <small>📌 {{ todayDate | date:'dd/MM/yyyy' }}</small>
-          </div>
+      <div class="stat glass stock">
+        <div class="stat-head">
+          <span class="pill ok">Total</span>
         </div>
+        <div class="stat-title">Produits en Stock</div>
+        <div class="stat-value">{{ stats.totalProducts }}</div>
+        <div class="stat-sub">Total disponible</div>
+      </div>
 
-        <!-- Actions -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
-          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;" (click)="manageInventory()">
-            <div style="font-size: 2rem;">📦</div>
-            <h4 style="margin: 0.5rem 0;">Gestion des Stocks</h4>
-            <p style="color: #666;">Vérifier et mettre à jour les niveaux de stock</p>
-            <div *ngIf="stats.lowStock > 0" style="background: #ffeaa7; color: #d35400; padding: 0.25rem 0.75rem; border-radius: 20px; display: inline-block; margin: 0.5rem 0;">
+      <div class="stat glass today">
+        <div class="stat-head">
+          <span class="pill purple">Aujourd'hui</span>
+        </div>
+        <div class="stat-title">Commandes Aujourd'hui</div>
+        <div class="stat-value">{{ stats.todayOrders }}</div>
+        <div class="stat-sub">À préparer</div>
+        <small class="stat-date">{{ todayDate | date:'dd/MM/yyyy' }}</small>
+      </div>
+    </section>
+
+    <!-- ACTIONS - Adaptez leurs cartes avec vos événements -->
+    <section class="section" *ngIf="!isLoading">
+      <div class="section-head">
+        <h2>Actions rapides</h2>
+        <p>Accès direct aux modules clés</p>
+      </div>
+
+      <div class="actions">
+        <div class="action glass" (click)="manageInventory()">
+          <div class="action-text">
+            <div class="action-title">Gestion des Stocks</div>
+            <div class="action-sub">Mettre à jour quantités, seuils, alertes.</div>
+            <div *ngIf="stats.lowStock > 0" class="alert-badge">
               {{ stats.lowStock }} stock(s) faible(s)
             </div>
-            <br>
-            <button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; margin-top: 1rem; cursor: pointer;">
-              Gérer les stocks
-            </button>
           </div>
+          <div class="action-arrow">→</div>
+        </div>
 
-          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;" (click)="processOrders()">
-            <div style="font-size: 2rem;">🚚</div>
-            <h4 style="margin: 0.5rem 0;">Commandes Clients</h4>
-            <p style="color: #666;">Traiter et préparer les commandes clients</p>
-            <div *ngIf="stats.pendingOrders > 0" style="background: #a29bfe; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; display: inline-block; margin: 0.5rem 0;">
+        <div class="action glass" (click)="processOrders()">
+          <div class="action-text">
+            <div class="action-title">Commandes</div>
+            <div class="action-sub">Préparer, valider, suivre les commandes.</div>
+            <div *ngIf="stats.pendingOrders > 0" class="alert-badge">
               {{ stats.pendingOrders }} en attente
             </div>
-            <br>
-            <button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; margin-top: 1rem; cursor: pointer;">
-              Voir les commandes
-            </button>
           </div>
+          <div class="action-arrow">→</div>
         </div>
       </div>
-    </div>
+    </section>
   </main>
 </div>
-

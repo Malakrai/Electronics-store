@@ -1,210 +1,97 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { TitleCasePipe } from '@angular/common';
 import { UsersAdminService } from '../../../services/users.service';
-import { User } from '../../../models/user.model';
 
 @Component({
   selector: 'app-users-crud',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule, CommonModule, TitleCasePipe],
   templateUrl: './users-crud.html',
   styleUrls: ['./users-crud.css']
 })
-export class UsersAdmin implements OnInit {
+export class UsersAdmin {
 
-  users: User[] = [];
-  selectedUser: User | null = null;
-
+  users: any[] = [];
   isEditing = false;
-  loading = false;
-  loadingUserId: number | null = null;
+  selectedUser: any = null;
 
-  errorMessage = '';
-  successMessage = '';
-
-  formData = {
+  // Utilisateur courant pour creation/edition
+  currentUser = {
     firstName: '',
     lastName: '',
     email: '',
     password: '',
-    phone: '',
-    address: ''
+    role: ''
   };
 
-  constructor(private usersService: UsersAdminService) {}
+  roles = ['magasinier', 'admin', 'manager'];
 
-  ngOnInit(): void {
+  constructor(private usersService: UsersAdminService) {
     this.loadUsers();
   }
 
-  loadUsers(): void {
-    this.loading = true;
-    this.clearMessagesImmediate();
-
+  loadUsers() {
     this.usersService.getMagasiniers().subscribe({
-      next: users => {
-        this.users = users || [];
-        this.loading = false;
-      },
-      error: () => {
-        this.errorMessage = 'Impossible de charger les utilisateurs';
-        this.loading = false;
-        this.autoClearMessages();
-      }
+      next: (res: any) => this.users = res,
+      error: (err: any) => console.error('Erreur chargement utilisateurs', err)
     });
   }
 
-  onSubmit(): void {
-    this.isEditing ? this.updateUser() : this.createUser();
-  }
+  createUser() {
+    if (!this.currentUser.firstName || !this.currentUser.lastName || !this.currentUser.email || !this.currentUser.password || !this.currentUser.role) {
+      alert('Tous les champs sont obligatoires.');
+      return;
+    }
 
-  createUser(): void {
-    if (!this.validateForm()) return;
+    const payload = { ...this.currentUser, employeeId: 'EMP-' + Date.now(), department: 'Stock' };
 
-    this.loading = true;
-    this.clearMessagesImmediate();
-
-    this.usersService.createMagasinier(this.prepareUserData()).subscribe({
-      next: (res) => {
-        this.users.push({
-          id: res?.magasinierId || res?.id,
-          ...this.prepareUserData(),
-          role: 'MAGASINIER'
-        });
+    this.usersService.createMagasinier(payload).subscribe({
+      next: (res: any) => {
+        this.users.push({ ...payload });
         this.resetForm();
-        this.successMessage = 'Utilisateur créé avec succès';
-        this.loading = false;
-        this.autoClearMessages();
+        alert('Utilisateur créé avec succès !');
       },
-      error: () => {
-        this.errorMessage = 'Erreur lors de la création';
-        this.loading = false;
-        this.autoClearMessages();
+      error: (err: any) => {
+        console.error(err);
+        alert('Erreur lors de la création : ' + (err.error?.message || err.message));
       }
     });
   }
 
-  editUser(user: User): void {
+  editUser(user: any) {
     this.isEditing = true;
-    this.selectedUser = { ...user };
-
-    this.formData = {
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      password: '',
-      phone: user.phone || '',
-      address: user.address || ''
-    };
+    this.currentUser = { ...user }; // copie pour ne pas modifier directement
   }
 
-  updateUser(): void {
-    if (!this.validateForm(true) || !this.selectedUser) return;
+  updateUser() {
+    if (!this.currentUser.firstName || !this.currentUser.lastName || !this.currentUser.email || !this.currentUser.role) {
+      alert('Tous les champs sont obligatoires.');
+      return;
+    }
 
-    this.loading = true;
-    this.clearMessagesImmediate();
+    const index = this.users.findIndex(u => u.email === this.currentUser.email);
+    if (index !== -1) this.users[index] = { ...this.currentUser };
 
-    this.usersService.updateUser(
-      this.selectedUser.id!.toString(),
-      this.prepareUserData(true)
-    ).subscribe({
-      next: () => {
-        Object.assign(
-          this.users.find(u => u.id === this.selectedUser!.id)!,
-          this.prepareUserData(true)
-        );
-        this.resetForm();
-        this.successMessage = 'Utilisateur mis à jour';
-        this.loading = false;
-        this.autoClearMessages();
-      },
-      error: () => {
-        this.errorMessage = 'Erreur lors de la mise à jour';
-        this.loading = false;
-        this.autoClearMessages();
-      }
-    });
+    this.resetForm();
+    alert('Utilisateur mis à jour avec succès !');
   }
 
-  deleteUser(user: User): void {
-    if (!confirm(`Supprimer ${user.firstName} ${user.lastName} ?`)) return;
-
-    this.loadingUserId = user.id!;
-    this.clearMessagesImmediate();
-
-    this.usersService.deleteUser(user.id!.toString()).subscribe({
-      next: () => {
-        this.users = this.users.filter(u => u.id !== user.id);
-        this.successMessage = 'Utilisateur supprimé';
-        this.loadingUserId = null;
-        this.autoClearMessages();
-      },
-      error: () => {
-        this.errorMessage = 'Erreur suppression';
-        this.loadingUserId = null;
-        this.autoClearMessages();
-      }
-    });
+  deleteUser(user: any) {
+    if (confirm(`Supprimer ${user.firstName} ${user.lastName} ?`)) {
+      this.users = this.users.filter(u => u.email !== user.email);
+      alert('Utilisateur supprimé.');
+    }
   }
 
-  cancelEdit(): void {
+  cancelEdit() {
     this.resetForm();
   }
 
-  private validateForm(isUpdate = false): boolean {
-    const { firstName, lastName, email, password } = this.formData;
-
-    if (!firstName || !lastName || !email) {
-      this.errorMessage = 'Tous les champs obligatoires doivent être remplis';
-      return false;
-    }
-
-    if (!isUpdate && password.length < 6) {
-      this.errorMessage = 'Mot de passe minimum 6 caractères';
-      return false;
-    }
-
-    return true;
-  }
-
-  private prepareUserData(isUpdate = false): any {
-    const data: any = {
-      firstName: this.formData.firstName.trim(),
-      lastName: this.formData.lastName.trim(),
-      email: this.formData.email.trim().toLowerCase(),
-      phone: this.formData.phone,
-      address: this.formData.address
-    };
-
-    if (!isUpdate || this.formData.password) {
-      data.password = this.formData.password;
-    }
-
-    return data;
-  }
-
-  private resetForm(): void {
+  resetForm() {
     this.isEditing = false;
+    this.currentUser = { firstName: '', lastName: '', email: '', password: '', role: '' };
     this.selectedUser = null;
-    this.formData = {
-      firstName: '',
-      lastName: '',
-      email: '',
-      password: '',
-      phone: '',
-      address: ''
-    };
-  }
-
-  private clearMessagesImmediate(): void {
-    this.errorMessage = '';
-    this.successMessage = '';
-  }
-
-  private autoClearMessages(): void {
-    setTimeout(() => {
-      this.clearMessagesImmediate();
-    }, 4000);
   }
 }

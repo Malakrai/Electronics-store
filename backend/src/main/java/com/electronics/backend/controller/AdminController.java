@@ -6,7 +6,6 @@ import com.electronics.backend.model.Magasinier;
 import com.electronics.backend.services.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +26,6 @@ public class AdminController {
     public ResponseEntity<?> createMagasinier(@Valid @RequestBody MagasinierCreationDto dto) {
         try {
             Magasinier magasinier = authService.createMagasinier(dto);
-
             return ResponseEntity.ok(Map.of(
                     "message", "Magasinier created successfully",
                     "id", magasinier.getId(),
@@ -98,7 +96,7 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("message", "Welcome to Admin Dashboard"));
     }
 
-    // CUSTOMERS
+    // CUSTOMERS (de votre version)
     @GetMapping("/customers")
     public ResponseEntity<Map<String, String>> getAllCustomers() {
         return ResponseEntity.ok(Map.of("message", "List of all customers"));
@@ -106,11 +104,16 @@ public class AdminController {
 
     // STATISTICS
     @GetMapping("/statistics")
-    public ResponseEntity<Map<String, String>> getStatistics() {
+    public ResponseEntity<Map<String, Object>> getStatistics() {
         return ResponseEntity.ok(Map.of(
-                "totalUsers", "150",
-                "totalOrders", "45",
-                "revenue", "€12,500"
+                "totalUsers", 150,
+                "totalOrders", 45,
+                "revenue", 12500
         ));
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, String>> health() {
+        return ResponseEntity.ok(Map.of("status", "OK"));
     }
 }

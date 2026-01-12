@@ -1,5 +1,7 @@
 <div class="login-container">
   <div class="login-card">
+
+    <!-- HEADER -->
     <div class="store-header">
       <h1 class="store-title">Electronic Store</h1>
     </div>
@@ -9,120 +11,110 @@
     </h2>
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <!-- Email (toujours visible sauf en mode 2FA) -->
+
+      <!-- ================= EMAIL ================= -->
       <div class="form-group" *ngIf="!requiresQrCode">
-        <label for="email">Email</label>
-        <input type="email" id="email" formControlName="email" class="form-control"
-               placeholder="votre@email.com"
-               [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-        <div class="invalid-feedback" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-          <div *ngIf="loginForm.get('email')?.errors?.['required']">Email requis</div>
-          <div *ngIf="loginForm.get('email')?.errors?.['email']">Format d'email invalide</div>
+        <label>Email</label>
+        <input
+          type="email"
+          formControlName="email"
+          class="form-control"
+          placeholder="votre@email.com"
+          [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+        />
+        <div class="invalid-feedback">
+          Email invalide
         </div>
       </div>
 
-      <!-- Mot de passe (uniquement pour le login initial) -->
+      <!-- ================= PASSWORD ================= -->
       <div class="form-group" *ngIf="!requiresQrCode">
-        <label for="password">Mot de passe</label>
+        <label>Mot de passe</label>
+
         <div class="password-input-container">
-          <input [type]="passwordVisible ? 'text' : 'password'" id="password" formControlName="password"
-                 class="form-control" placeholder="Votre mot de passe"
-                 [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-          <button type="button" class="btn btn-outline-secondary toggle-password-btn"
-                  (click)="togglePasswordVisibility()">
+          <input
+            [type]="passwordVisible ? 'text' : 'password'"
+            formControlName="password"
+            class="form-control"
+            placeholder="Mot de passe"
+            [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+          />
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary toggle-password-btn"
+            (click)="togglePasswordVisibility()"
+          >
             <i class="fas" [ngClass]="passwordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
           </button>
         </div>
-        <div class="invalid-feedback" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-          <div *ngIf="loginForm.get('password')?.errors?.['required']">Mot de passe requis</div>
-          <div *ngIf="loginForm.get('password')?.errors?.['minlength']">Minimum 6 caractères</div>
+      </div>
+
+      <!-- ================= QR CODE ================= -->
+      <div *ngIf="requiresQrCode && qrCodeUrl" class="qr-code-container text-center">
+        <p class="text-muted">Scanne ce QR code avec Google Authenticator</p>
+
+        <img
+          [src]="qrCodeUrl"
+          alt="QR Code 2FA"
+          class="qr-code-img"
+        />
+
+        <div class="alert alert-info mt-3">
+          Entre ensuite le code à 6 chiffres généré
         </div>
       </div>
 
-      <!-- QR Code pour l'admin (2FA) -->
-      <div class="form-group" *ngIf="requiresQrCode && qrCodeUrl">
-        <div class="qr-code-container text-center">
-          <h5>Authentification à deux facteurs</h5>
-          <p class="text-muted mb-3">Scannez ce QR code avec Google Authenticator</p>
-
-          <!-- Debug info -->
-          <div class="debug-info mb-2" *ngIf="qrCodeUrl">
-            <small class="text-info">QR Code chargé ({{ qrCodeUrl.length }} caractères)</small>
-          </div>
-
-          <div class="qr-code-box mb-3">
-            <img [src]="qrCodeUrl" alt="QR Code 2FA" class="qr-code-img"
-                 (load)="console.log('QR Code image chargée avec succès')"
-                 (error)="console.error('Erreur de chargement du QR Code')">
-          </div>
-
-          <div class="alert alert-info">
-            <p class="mb-0"><strong>Instructions :</strong></p>
-            <ol class="mb-0 mt-2">
-              <li>Téléchargez Google Authenticator sur votre téléphone</li>
-              <li>Ouvrez l'application et scannez le QR code</li>
-              <li>Entrez le code à 6 chiffres généré ci-dessous</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-
-      <!-- Code Google Authenticator (uniquement pour admin en mode 2FA) -->
+      <!-- ================= TOTP CODE ================= -->
       <div class="form-group" *ngIf="requiresQrCode">
-        <label for="totpCode">
-          <i class="fas fa-mobile-alt me-2"></i>Code de vérification
-        </label>
-        <input type="text" id="totpCode" formControlName="totpCode" class="form-control form-control-lg text-center"
-               placeholder="000000" maxlength="6" autocomplete="off"
-               (input)="onTotpCodeChange()"
-               pattern="[0-9]*" inputmode="numeric">
-        <small class="form-text text-muted">
-          Code à 6 chiffres depuis Google Authenticator (valable 30 secondes)
-        </small>
+        <label>Code 2FA</label>
+        <input
+          type="text"
+          formControlName="totpCode"
+          class="form-control text-center"
+          maxlength="6"
+          placeholder="123456"
+          (input)="onTotpCodeChange()"
+          inputmode="numeric"
+        />
       </div>
 
-      <!-- Messages d'erreur/succès -->
+      <!-- ================= MESSAGES ================= -->
       <div class="alert alert-success" *ngIf="successMessage">
-        <i class="fas fa-check-circle me-2"></i>{{ successMessage }}
+        {{ successMessage }}
       </div>
 
       <div class="alert alert-danger" *ngIf="errorMessage">
-        <i class="fas fa-exclamation-triangle me-2"></i>{{ errorMessage }}
+        {{ errorMessage }}
       </div>
 
-      <!-- Boutons d'action -->
-      <div class="action-buttons">
-        <!-- Bouton principal -->
-        <button type="submit" class="btn btn-primary btn-block login-btn" [disabled]="isLoading">
-          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
-          {{ getButtonText() }}
-        </button>
+      <!-- ================= ACTIONS ================= -->
+      <button
+        type="submit"
+        class="btn btn-primary btn-block"
+        [disabled]="isLoading"
+      >
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+        {{ getButtonText() }}
+      </button>
 
-        <!-- Bouton retour (uniquement en mode 2FA) -->
-        <button type="button" class="btn btn-outline-secondary btn-block mt-2"
-                *ngIf="requiresQrCode"
-                (click)="goBackToLogin()"
-                [disabled]="isLoading">
-          <i class="fas fa-arrow-left me-2"></i>Retour à la connexion
-        </button>
-      </div>
+      <!-- RETOUR -->
+      <button
+        *ngIf="requiresQrCode"
+        type="button"
+        class="btn btn-outline-secondary btn-block mt-2"
+        (click)="goBackToLogin()"
+        [disabled]="isLoading"
+      >
+        ← Retour à la connexion
+      </button>
 
-      <!-- Lien mot de passe oublié (uniquement en mode login initial) -->
-      <div class="forgot-password-link text-center mt-3" *ngIf="!requiresQrCode">
-        <a href="javascript:void(0)" (click)="onForgotPassword()" class="text-decoration-none">
-          <i class="fas fa-key me-1"></i> Mot de passe oublié ?
-        </a>
-      </div>
+      <!-- FORGOT -->
+      <a routerLink="/forgot-password" class="text-decoration-none">
+  Mot de passe oublié ?
+</a>
+
+
     </form>
-
-    <!-- Séparateur (uniquement en mode login initial) -->
-    <div class="separator" *ngIf="!requiresQrCode">
-      <span>Ou</span>
-    </div>
-
-    <!-- Lien vers inscription (uniquement en mode login initial) -->
-    <div class="login-footer" *ngIf="!requiresQrCode">
-      <p>Nouveau client ? <a routerLink="/register" class="register-link">Créer un compte</a></p>
-    </div>
   </div>
 </div>
