@@ -1,0 +1,113 @@
+<div class="magasinier-orders">
+  <section class="controls-section">
+    <div class="container">
+      <div class="controls-row">
+        <div class="search-container">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="search-icon">🔍</i>
+            </span>
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="recherche"
+              placeholder="Rechercher par numéro, client, email..."
+            />
+          </div>
+        </div>
+        <div class="actions-container">
+          <button class="btn btn-primary" (click)="rafraichir()" [disabled]="isLoading">
+            {{ isLoading ? '...' : '🔄' }} Actualiser
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contenu principal -->
+  <main class="orders-main">
+    <div class="container">
+      <!-- Chargement -->
+      <div *ngIf="isLoading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Chargement des commandes...</p>
+      </div>
+
+      <!-- Message d'erreur -->
+      <div *ngIf="errorMessage && !isLoading" class="alert alert-danger">
+        ⚠️ {{ errorMessage }}
+        <button (click)="chargerCommandes()" class="btn btn-sm btn-outline">Réessayer</button>
+      </div>
+
+      <!-- Aucune commande -->
+      <div *ngIf="!isLoading && getCommandeFiltrees().length === 0 && !errorMessage" class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>Aucune commande trouvée</h3>
+        <p *ngIf="recherche">Aucune commande ne correspond à votre recherche.</p>
+        <p *ngIf="!recherche">Aucune commande n'a été passée pour le moment.</p>
+      </div>
+
+      <!-- Liste des commandes -->
+      <div *ngIf="!isLoading && getCommandeFiltrees().length > 0" class="commandes-liste">
+        <div class="commande-card" *ngFor="let commande of getCommandeFiltrees()">
+          <div class="commande-header">
+            <div class="commande-numero">
+              <h3>{{ commande.numero }}</h3>
+              <span class="commande-id">ID: {{ commande.id }}</span>
+            </div>
+            <div class="commande-date">
+              <span class="date-label">Date :</span>
+              <span class="date-value">{{ commande.dateFormatee }}</span>
+            </div>
+          </div>
+
+          <div class="commande-body">
+            <div class="commande-info">
+              <div class="info-section">
+                <h4>👤 Informations client</h4>
+                <p><strong>Nom :</strong> {{ commande.nomClient }}</p>
+                <p><strong>Email :</strong> {{ commande.email }}</p>
+                <p *ngIf="commande.telephone"><strong>Téléphone :</strong> {{ commande.telephone }}</p>
+              </div>
+
+              <div class="info-section">
+                <h4>💰 Informations paiement</h4>
+                <p><strong>Statut :</strong>
+                  <span class="badge" [ngClass]="getStatutPaiementClasse(commande.statutPaiement)">
+                    {{ getStatutPaiementLabel(commande.statutPaiement) }}
+                  </span>
+                </p>
+                <p><strong>Total :</strong> {{ formatMontant(commande.total) }}</p>
+                <p *ngIf="commande.montantPaye > 0">
+                  <strong>Payé :</strong> {{ formatMontant(commande.montantPaye) }}
+                </p>
+                <p *ngIf="commande.montantRestant > 0" class="text-danger">
+                  <strong>Reste à payer :</strong> {{ formatMontant(commande.montantRestant) }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Articles commandés -->
+            <div *ngIf="commande.articles.length > 0" class="articles-section">
+              <h5>🛒 Articles commandés</h5>
+              <div class="articles-grid">
+                <div class="article-item" *ngFor="let article of commande.articles">
+                  <div class="article-description">{{ article.description }}</div>
+                  <div class="article-details">
+                    <span class="article-quantity">Quantité : {{ article.quantity }}</span>
+                    <span class="article-prix">Prix : {{ formatMontant(article.unitPrice) }}</span>
+                    <span class="article-total">Total : {{ formatMontant(article.lineTotal) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="commande.articles.length === 0" class="no-articles">
+              <p class="text-muted">Aucun article détaillé</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

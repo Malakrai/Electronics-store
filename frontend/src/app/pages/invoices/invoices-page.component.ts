@@ -1,114 +1,181 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { ApiService, MonthlyBill } from '../../services/api.service';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { ApiService } from '../../services/api.service';
+import { MonthlyBill, PaymentMethod } from '../../models/bill.model';
 
 @Component({
   selector: 'app-invoices-page',
   standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
-  <div class="card">
-    <h2>Invoices</h2>
-
-    <div *ngIf="loading" class="box">Chargement...</div>
-    <div *ngIf="error" class="err">
-      ⚠️ {{ error }}
-      <button class="btn outline" (click)="load()">Réessayer</button>
-    </div>
-
-    <div *ngIf="!loading && bills.length === 0" class="box">
-      Aucune facture.
-    </div>
-
-    <table *ngIf="!loading && bills.length > 0" class="table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Date</th>
-          <th>Client</th>
-          <th>Statut</th>
-          <th>Total</th>
-          <th style="width:260px;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let b of bills">
-          <td>#{{ b.id }}</td>
-          <td>{{ b.billDate }}</td>
-          <td>{{ b.customer?.email }}</td>
-          <td><span class="badge" [attr.data-status]="b.status">{{ b.status }}</span></td>
-          <td>{{ toNumber(b.totalAmount) | number:'1.2-2' }} €</td>
-          <td class="actions">
-            <a class="btn outline" [routerLink]="['/invoices', b.id]">Voir</a>
-            <button class="btn outline" (click)="download(b.id)">PDF</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  `,
-  styles: [`
-    .card{ padding:18px; border-radius:16px; background:white; }
-    h2{ margin:0 0 14px; }
-    .table{ width:100%; border-collapse:collapse; }
-    th, td{ padding:10px 8px; border-bottom:1px solid #eee; text-align:left; font-weight:700; }
-    th{ font-size:12px; opacity:.8; }
-    .actions{ display:flex; gap:10px; }
-    .box{ padding:12px; border:1px dashed #ddd; border-radius:12px; }
-    .err{ padding:12px; border-radius:12px; border:1px solid rgba(239,68,68,.35); background: rgba(239,68,68,.10); font-weight:800; display:flex; gap:12px; align-items:center; flex-wrap:wrap;}
-    .btn{ height:38px; padding:0 12px; border-radius:12px; border:1px solid transparent; background: rgba(109,40,217,.95); color:white; font-weight:900; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; }
-    .btn.outline{ background: transparent; color:#1b1033; border-color: rgba(89,50,164,.28); }
-    .badge{ padding:4px 10px; border-radius:999px; font-size:12px; }
-    .badge[data-status="PAID"]{ background: rgba(22,163,74,.12); color:#166534; }
-    .badge[data-status="PENDING"]{ background: rgba(245,158,11,.15); color:#92400e; }
-    .badge[data-status="CANCELLED"]{ background: rgba(239,68,68,.12); color:#991b1b; }
-  `]
+  imports: [CommonModule, FormsModule, RouterModule],
+  templateUrl: './invoices-page.component.html',
+  styleUrls: ['./invoices-page.component.css']
 })
 export class InvoicesPageComponent implements OnInit {
   bills: MonthlyBill[] = [];
+  filteredBills: MonthlyBill[] = [];
   loading = false;
   error = '';
+  searchTerm = '';
+  filterStatus = 'ALL';
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
-    this.load();
+    this.loadBills();
   }
 
-  toNumber(v: any): number {
-    if (typeof v === 'number') return v;
-    if (typeof v === 'string') return Number(v.replace(',', '.'));
-    return 0;
-  }
-
-  load() {
+  loadBills(): void {
     this.loading = true;
     this.error = '';
 
-    this.api.getBills().subscribe({
+    this.api.getAllBills().subscribe({
       next: (bills) => {
         this.bills = bills || [];
+        this.filteredBills = [...this.bills];
         this.loading = false;
       },
-      error: () => {
-        this.loading = false;
+      error: (err) => {
+        console.error('Error loading bills:', err);
         this.error = 'Impossible de charger les factures.';
+        this.loading = false;
       }
     });
   }
 
-  download(id: number) {
-    this.api.downloadBillPdf(id).subscribe({
+  // Méthodes de calcul pour le template
+  getTotalUnpaid(): number {
+    return this.bills
+      .filter(b => b.status === 'PENDING' || b.status === 'UNPAID')
+      .reduce((sum, b) => sum + this.toNumber(b.totalAmount), 0);
+  }
+
+  getTotalPaid(): number {
+    return this.bills
+      .filter(b => b.status === 'PAID')
+      .reduce((sum, b) => sum + this.toNumber(b.totalAmount), 0);
+  }
+
+  // Gestion des filtres
+  onSearchChange(): void {
+    this.applyFilters();
+  }
+
+  onStatusFilterChange(status: string): void {
+    this.filterStatus = status;
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.bills];
+
+    // Filtre par statut
+    if (this.filterStatus !== 'ALL') {
+      filtered = filtered.filter(b => b.status === this.filterStatus);
+    }
+
+    // Filtre par recherche
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(b => {
+        const hay = `${b.id} ${b.billDate || ''} ${this.getCustomerDisplayName(b).toLowerCase()} ${this.getCustomerEmail(b).toLowerCase()}`;
+        return hay.includes(term);
+      });
+    }
+
+    this.filteredBills = filtered;
+  }
+
+  // Safe methods for template
+  getCustomerDisplayName(bill: MonthlyBill): string {
+    if (!bill.customer) {
+      return `Client #${bill.customerId || 'N/A'}`;
+    }
+
+    const firstName = bill.customer.firstName || '';
+    const lastName = bill.customer.lastName || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+
+    return fullName || bill.customer.email || `Client #${bill.customerId || 'N/A'}`;
+  }
+
+  getCustomerEmail(bill: MonthlyBill): string {
+    return bill.customer?.email || '';
+  }
+
+  getCustomerPhone(bill: MonthlyBill): string {
+    return bill.customer?.phone || '';
+  }
+
+  getFormattedDate(dateStr?: string): string {
+    return this.api.getFormattedDate(dateStr);
+  }
+
+  getStatusLabel(status: string): string {
+    return this.api.getStatusLabel(status);
+  }
+
+  // Alias pour le template
+  getStatusText(status: string): string {
+    return this.getStatusLabel(status);
+  }
+
+  getStatusClass(status: string): string {
+    const statusClassMap: {[key: string]: string} = {
+      'PAID': 'status-paid',
+      'PENDING': 'status-pending',
+      'UNPAID': 'status-pending', // Same as pending
+      'CANCELLED': 'status-canceled',
+      'CANCELED': 'status-canceled'
+    };
+    return statusClassMap[status?.toUpperCase()] || 'status-unknown';
+  }
+
+  toNumber(value: any): number {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const num = parseFloat(value);
+      return isNaN(num) ? 0 : num;
+    }
+    return 0;
+  }
+
+  viewBill(billId: number): void {
+    this.router.navigate(['/invoices', billId]);
+  }
+
+  createTestBill(): void {
+    this.loading = true;
+    this.api.createTestBill(1).subscribe({
+      next: () => {
+        this.loadBills();
+      },
+      error: (err) => {
+        console.error('Error creating test bill:', err);
+        this.error = 'Erreur lors de la création de la facture test.';
+        this.loading = false;
+      }
+    });
+  }
+
+  downloadPdf(billId: number): void {
+    this.api.downloadBillPdf(billId).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `bill-${id}.pdf`;
+        a.download = `facture-${billId}.pdf`;
         a.click();
         window.URL.revokeObjectURL(url);
       },
-      error: () => alert('PDF impossible à télécharger')
+      error: (err) => {
+        console.error('Error downloading PDF:', err);
+        alert('Erreur lors du téléchargement du PDF');
+      }
     });
   }
 }

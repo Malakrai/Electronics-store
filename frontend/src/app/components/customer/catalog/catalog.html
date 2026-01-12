@@ -69,11 +69,6 @@
 
       <p class="price">{{ formatPrice(product.price) }}</p>
 
-      <p class="stock"
-         [class.low-stock]="product.stock > 0 && product.stock < 10">
-        Stock : {{ product.stock }}
-      </p>
-
       <p class="status" [class]="'status-' + (product.status || 'unknown')">
         {{ getStatusText(product.status || '') }}
       </p>

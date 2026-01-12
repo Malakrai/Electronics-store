@@ -1,79 +1,111 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { ApiService, MonthlyBill } from '../../services/api.service';
 import { FormsModule } from '@angular/forms';
-
+import { Router, RouterModule } from '@angular/router';
+import { ApiService } from '../../services/api.service';
+import { MonthlyBill, PaymentMethod } from '../../models/bill.model';
 @Component({
+  selector: 'app-orders-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
-  template: `
-  <section class="card page">
-    <div class="head">
-      <div>
-        <h1>Mes commandes</h1>
-        <p class="muted">Historique (basé sur tes factures).</p>
-      </div>
-      <input class="input" [(ngModel)]="q" placeholder="Rechercher (id, email, date)..." />
-    </div>
-
-    <div *ngIf="loading" class="muted">Chargement…</div>
-
-    <div class="list" *ngIf="!loading">
-      <div class="rowCard" *ngFor="let b of filtered()">
-        <div class="left">
-          <div class="title">Commande #{{ b.id }}</div>
-          <div class="meta">{{ b.billDate }} • {{ b.customer.email }}</div>
-        </div>
-        <div class="right">
-          <span class="badge" [class.paid]="b.status==='PAID'" [class.pending]="b.status!=='PAID'">{{ b.status }}</span>
-          <strong class="amount">{{ b.totalAmount | number:'1.2-2' }} €</strong>
-          <a class="btn outline" [routerLink]="['/invoices', b.id]">Détails</a>
-        </div>
-      </div>
-      <div class="muted" *ngIf="filtered().length===0">Aucune commande.</div>
-    </div>
-  </section>
-  `,
-  styles: [`
-    .page{ padding:22px; }
-    .head{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-    h1{ margin:0; }
-    .muted{ color:#6b7280; margin:6px 0 0; }
-    .list{ margin-top:16px; display:flex; flex-direction:column; gap:10px; }
-    .rowCard{
-      display:flex; justify-content:space-between; gap:12px;
-      padding:14px; border:1px solid #e5e7eb; border-radius:18px;
-      background:#fff;
-    }
-    .title{ font-weight:1000; }
-    .meta{ color:#6b7280; font-size:12px; margin-top:4px; }
-    .right{ display:flex; align-items:center; gap:10px; }
-    .amount{ min-width:110px; text-align:right; }
-    .badge{ padding:6px 10px; border-radius:999px; font-weight:900; font-size:12px; border:1px solid #e5e7eb; }
-    .badge.paid{ background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.25); }
-    .badge.pending{ background: rgba(234,179,8,.12); border-color: rgba(234,179,8,.25); }
-  `]
+  imports: [CommonModule, FormsModule, RouterModule],
+  templateUrl: './orders-page.component.html',
+  styleUrls: ['./orders-page.component.css']
 })
 export class OrdersPageComponent implements OnInit {
-  bills: MonthlyBill[] = [];
-  loading = true;
+  orders: MonthlyBill[] = [];
+  filteredOrders: MonthlyBill[] = [];
+  loading = false;
+  error = '';
   q = '';
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
-    this.api.getBills().subscribe({
-      next: (b: MonthlyBill[]) => { this.bills = b ?? []; this.loading = false; },
-      error: () => { this.loading = false; }
+    this.loadOrders();
+  }
+
+  loadOrders(): void {
+    this.loading = true;
+    this.error = '';
+
+    this.api.getAllBills().subscribe({
+      next: (bills) => {
+        this.orders = bills || [];
+        this.updateFilteredOrders();
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading orders:', err);
+        this.error = 'Impossible de charger les commandes.';
+        this.loading = false;
+      }
     });
   }
 
-  filtered(): MonthlyBill[] {
-    const q = this.q.trim().toLowerCase();
-    return this.bills.filter(b => {
-      const hay = `${b.id} ${b.billDate} ${b.customer.email}`.toLowerCase();
-      return q ? hay.includes(q) : true;
-    });
+  // Met à jour filteredOrders en fonction de la recherche
+  updateFilteredOrders(): void {
+    const term = this.q.trim().toLowerCase();
+    if (!term) {
+      this.filteredOrders = [...this.orders];
+    } else {
+      this.filteredOrders = this.orders.filter(order => {
+        const customerEmail = order.customer?.email || '';
+        const customerFirstName = order.customer?.firstName || '';
+        const customerLastName = order.customer?.lastName || '';
+        const billDate = order.billDate || '';
+
+        const hay = `${order.id} ${customerEmail} ${customerFirstName} ${customerLastName} ${billDate}`.toLowerCase();
+        return hay.includes(term);
+      });
+    }
+  }
+
+  // Appelé à chaque modification de la recherche
+  onSearchChange(): void {
+    this.updateFilteredOrders();
+  }
+
+  getCustomerEmail(order: MonthlyBill): string {
+    return order.customer?.email || 'Email non fourni';
+  }
+
+  getFormattedDate(dateStr?: string): string {
+    return this.api.getFormattedDate(dateStr);
+  }
+
+  getDisplayStatus(status: string): string {
+    if (!status) return 'Inconnu';
+    switch(status.toUpperCase()) {
+      case 'PAID': return 'Payé';
+      case 'PENDING': return 'En attente';
+      case 'CANCELED':
+      case 'CANCELLED': return 'Annulé';
+      case 'UNPAID': return 'Impayé';
+      default: return status;
+    }
+  }
+
+  toNumber(value: any): number {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const num = parseFloat(value);
+      return isNaN(num) ? 0 : num;
+    }
+    return 0;
+  }
+
+  viewOrder(orderId: number): void {
+    this.router.navigate(['/invoices', orderId]);
+  }
+
+  getCustomerFullName(order: MonthlyBill): string {
+    if (!order.customer) return 'Client inconnu';
+    const firstName = order.customer.firstName || '';
+    const lastName = order.customer.lastName || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    return fullName || order.customer.email || 'Client inconnu';
   }
 }

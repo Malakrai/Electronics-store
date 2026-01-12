@@ -1,0 +1,17 @@
+.page{ padding:16px; }
+    .card{ border-radius:16px; padding:16px; border:1px solid rgba(0,0,0,.08); background:#fff; }
+    .top{ display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; }
+    .btn{ padding:10px 12px; border-radius:12px; border:1px solid rgba(90,24,154,.35); background: rgba(124,58,237,.10); font-weight:800; cursor:pointer; text-decoration:none; color:#111; }
+    .btn.outline{ background:#fff; }
+    .muted{ opacity:.7; margin-top:10px; }
+    .error{ margin-top:12px; padding:10px; border-radius:12px; background:#fee2e2; border:1px solid #ef4444; font-weight:800; }
+    .grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-top:12px; }
+    .label{ font-size:12px; opacity:.7; font-weight:800; }
+    .value{ font-weight:800; }
+    .strong{ font-size:18px; }
+    .badge{ display:inline-block; padding:6px 10px; border-radius:999px; background: rgba(124,58,237,.12); border:1px solid rgba(124,58,237,.25); font-weight:900; }
+    .mt{ margin-top:16px; }
+    .table{ width:100%; border-collapse:collapse; margin-top:10px; }
+    th, td{ padding:10px; border-bottom:1px solid rgba(0,0,0,.08); }
+    .r{ text-align:right; }
+    @media (max-width: 900px){ .grid{ grid-template-columns: 1fr 1fr; } }

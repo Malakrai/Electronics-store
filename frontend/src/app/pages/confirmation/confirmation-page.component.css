@@ -1,0 +1,59 @@
+.card {
+  padding: 18px;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.box {
+  padding: 12px;
+  border: 1px dashed #ddd;
+  border-radius: 12px;
+  margin-top: 12px;
+}
+
+.err {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(239,68,68,.35);
+  background: rgba(239,68,68,.10);
+  font-weight: 800;
+  margin-top: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: rgba(109,40,217,.95);
+  color: white;
+  font-weight: 900;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(109,40,217,0.3);
+}
+
+.btn.outline {
+  background: transparent;
+  color: #1b1033;
+  border-color: rgba(89,50,164,.28);
+}
+
+.btn.outline:hover {
+  background: rgba(89,50,164,.08);
+}

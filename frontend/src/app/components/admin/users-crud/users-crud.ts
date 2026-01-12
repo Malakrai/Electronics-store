@@ -1,200 +1,210 @@
 import { Component, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { TitleCasePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { UsersAdminService } from '../../../services/users.service';
+import { User } from '../../../models/user.model';
 
 @Component({
   selector: 'app-users-crud',
   standalone: true,
-  imports: [FormsModule, CommonModule, TitleCasePipe],
+  imports: [CommonModule, FormsModule],
   templateUrl: './users-crud.html',
   styleUrls: ['./users-crud.css']
 })
 export class UsersAdmin implements OnInit {
 
-  users: any[] = [];
-  isEditing = false;
-  selectedUser: any = null;
-  loading = false;
+  users: User[] = [];
+  selectedUser: User | null = null;
 
-  currentUser = {
+  isEditing = false;
+  loading = false;
+  loadingUserId: number | null = null;
+
+  errorMessage = '';
+  successMessage = '';
+
+  formData = {
     firstName: '',
     lastName: '',
     email: '',
     password: '',
-    role: ''
+    phone: '',
+    address: ''
   };
-
-  roles = ['magasinier', 'admin', 'manager'];
 
   constructor(private usersService: UsersAdminService) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadUsers();
   }
 
-  loadUsers() {
+  loadUsers(): void {
     this.loading = true;
-    this.usersService.getUsers().subscribe({
-      next: (res: any) => {
-        console.log('Données reçues:', res);
-        // Vérifier la structure de la réponse
-        if (Array.isArray(res)) {
-          this.users = res;
-        } else if (res && Array.isArray(res.data)) {
-          this.users = res.data; // Si l'API retourne { data: [...] }
-        } else if (res && res.users) {
-          this.users = res.users; // Si l'API retourne { users: [...] }
-        } else {
-          this.users = [];
-          console.warn('Format de données non reconnu:', res);
-        }
-        console.log('Utilisateurs chargés:', this.users.length);
+    this.clearMessagesImmediate();
+
+    this.usersService.getMagasiniers().subscribe({
+      next: users => {
+        this.users = users || [];
         this.loading = false;
       },
-      error: (err: any) => {
-        console.error('Erreur chargement utilisateurs', err);
-        this.users = [];
+      error: () => {
+        this.errorMessage = 'Impossible de charger les utilisateurs';
         this.loading = false;
-        alert('Erreur lors du chargement des utilisateurs');
+        this.autoClearMessages();
       }
     });
   }
 
-  createUser() {
-    if (!this.currentUser.firstName || !this.currentUser.lastName || !this.currentUser.email || !this.currentUser.password || !this.currentUser.role) {
-      alert('Tous les champs sont obligatoires.');
-      return;
-    }
+  onSubmit(): void {
+    this.isEditing ? this.updateUser() : this.createUser();
+  }
 
-    // Vérifier si l'email existe déjà
-    if (this.users.some(user => user.email === this.currentUser.email)) {
-      alert('Cet email est déjà utilisé.');
-      return;
-    }
+  createUser(): void {
+    if (!this.validateForm()) return;
 
-    const payload = {
-      firstName: this.currentUser.firstName,
-      lastName: this.currentUser.lastName,
-      email: this.currentUser.email,
-      password: this.currentUser.password,
-      role: this.currentUser.role,
-      // Ajoutez d'autres champs requis par votre API
-      createdAt: new Date().toISOString(),
-      active: true
-    };
+    this.loading = true;
+    this.clearMessagesImmediate();
 
-    console.log('Création avec payload:', payload);
-
-    this.usersService.createUser(payload).subscribe({
-      next: (res: any) => {
-        console.log('Réponse création:', res);
-
-        // Ajouter le nouvel utilisateur à la liste
-        // Vérifier la structure de la réponse
-        const newUser = res.user || res.data || res;
-        if (newUser) {
-          this.users.push(newUser);
-          this.users = [...this.users]; // Créer une nouvelle référence
-        }
-
+    this.usersService.createMagasinier(this.prepareUserData()).subscribe({
+      next: (res) => {
+        this.users.push({
+          id: res?.magasinierId || res?.id,
+          ...this.prepareUserData(),
+          role: 'MAGASINIER'
+        });
         this.resetForm();
-        alert('Utilisateur créé avec succès !');
+        this.successMessage = 'Utilisateur créé avec succès';
+        this.loading = false;
+        this.autoClearMessages();
       },
-      error: (err: any) => {
-        console.error('Erreur création:', err);
-        alert('Erreur lors de la création : ' + (err.error?.message || err.message || 'Erreur inconnue'));
+      error: () => {
+        this.errorMessage = 'Erreur lors de la création';
+        this.loading = false;
+        this.autoClearMessages();
       }
     });
   }
 
-  editUser(user: any) {
+  editUser(user: User): void {
     this.isEditing = true;
-    this.selectedUser = user;
-    this.currentUser = {
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      email: user.email || '',
-      password: '', // Ne pas afficher le mot de passe
-      role: user.role || ''
+    this.selectedUser = { ...user };
+
+    this.formData = {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      password: '',
+      phone: user.phone || '',
+      address: user.address || ''
     };
   }
 
-  updateUser() {
-    if (!this.currentUser.firstName || !this.currentUser.lastName || !this.currentUser.email || !this.currentUser.role) {
-      alert('Tous les champs sont obligatoires.');
-      return;
-    }
+  updateUser(): void {
+    if (!this.validateForm(true) || !this.selectedUser) return;
 
-    if (!this.selectedUser || !this.selectedUser.id) {
-      alert('Utilisateur non sélectionné pour la modification');
-      return;
-    }
+    this.loading = true;
+    this.clearMessagesImmediate();
 
-    const payload = {
-      firstName: this.currentUser.firstName,
-      lastName: this.currentUser.lastName,
-      email: this.currentUser.email,
-      role: this.currentUser.role,
-      // Inclure le mot de passe seulement s'il a été modifié
-      ...(this.currentUser.password && { password: this.currentUser.password })
-    };
-
-    this.usersService.updateUser(this.selectedUser.id, payload).subscribe({
-      next: (res: any) => {
-        // Mettre à jour l'utilisateur dans la liste
-        const index = this.users.findIndex(u => u.id === this.selectedUser.id);
-        if (index !== -1) {
-          const updatedUser = res.user || res.data || res;
-          this.users[index] = { ...this.users[index], ...updatedUser };
-          this.users = [...this.users];
-        }
-
+    this.usersService.updateUser(
+      this.selectedUser.id!.toString(),
+      this.prepareUserData(true)
+    ).subscribe({
+      next: () => {
+        Object.assign(
+          this.users.find(u => u.id === this.selectedUser!.id)!,
+          this.prepareUserData(true)
+        );
         this.resetForm();
-        alert('Utilisateur mis à jour avec succès !');
+        this.successMessage = 'Utilisateur mis à jour';
+        this.loading = false;
+        this.autoClearMessages();
       },
-      error: (err: any) => {
-        console.error('Erreur mise à jour:', err);
-        alert('Erreur lors de la mise à jour : ' + err.error?.message || err.message);
+      error: () => {
+        this.errorMessage = 'Erreur lors de la mise à jour';
+        this.loading = false;
+        this.autoClearMessages();
       }
     });
   }
 
-  deleteUser(user: any) {
-    if (!user.id) {
-      alert('Impossible de supprimer: ID manquant');
-      return;
-    }
+  deleteUser(user: User): void {
+    if (!confirm(`Supprimer ${user.firstName} ${user.lastName} ?`)) return;
 
-    if (confirm(`Êtes-vous sûr de vouloir supprimer ${user.firstName} ${user.lastName} ?`)) {
-      this.usersService.deleteUser(user.id).subscribe({
-        next: () => {
-          // Supprimer de la liste locale
-          this.users = this.users.filter(u => u.id !== user.id);
-          alert('Utilisateur supprimé avec succès.');
-        },
-        error: (err: any) => {
-          console.error('Erreur suppression:', err);
-          alert('Erreur lors de la suppression : ' + err.error?.message || err.message);
-        }
-      });
-    }
+    this.loadingUserId = user.id!;
+    this.clearMessagesImmediate();
+
+    this.usersService.deleteUser(user.id!.toString()).subscribe({
+      next: () => {
+        this.users = this.users.filter(u => u.id !== user.id);
+        this.successMessage = 'Utilisateur supprimé';
+        this.loadingUserId = null;
+        this.autoClearMessages();
+      },
+      error: () => {
+        this.errorMessage = 'Erreur suppression';
+        this.loadingUserId = null;
+        this.autoClearMessages();
+      }
+    });
   }
 
-  cancelEdit() {
+  cancelEdit(): void {
     this.resetForm();
   }
 
-  resetForm() {
+  private validateForm(isUpdate = false): boolean {
+    const { firstName, lastName, email, password } = this.formData;
+
+    if (!firstName || !lastName || !email) {
+      this.errorMessage = 'Tous les champs obligatoires doivent être remplis';
+      return false;
+    }
+
+    if (!isUpdate && password.length < 6) {
+      this.errorMessage = 'Mot de passe minimum 6 caractères';
+      return false;
+    }
+
+    return true;
+  }
+
+  private prepareUserData(isUpdate = false): any {
+    const data: any = {
+      firstName: this.formData.firstName.trim(),
+      lastName: this.formData.lastName.trim(),
+      email: this.formData.email.trim().toLowerCase(),
+      phone: this.formData.phone,
+      address: this.formData.address
+    };
+
+    if (!isUpdate || this.formData.password) {
+      data.password = this.formData.password;
+    }
+
+    return data;
+  }
+
+  private resetForm(): void {
     this.isEditing = false;
     this.selectedUser = null;
-    this.currentUser = {
+    this.formData = {
       firstName: '',
       lastName: '',
       email: '',
       password: '',
-      role: ''
+      phone: '',
+      address: ''
     };
+  }
+
+  private clearMessagesImmediate(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  private autoClearMessages(): void {
+    setTimeout(() => {
+      this.clearMessagesImmediate();
+    }, 4000);
   }
 }

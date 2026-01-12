@@ -1,4 +1,22 @@
-<nav>Dashboard Statistiques</nav>
-<main>
-  <router-outlet></router-outlet>
-</main>
+<div class="app">
+  <nav class="dashboard-nav">
+    <div class="nav-links">
+      <a routerLink="/checkout" routerLinkActive="active">
+        <span class="nav-icon">🛒</span>
+        Checkout
+      </a>
+      <a routerLink="/orders" routerLinkActive="active">
+        <span class="nav-icon">📦</span>
+        Mes commandes
+      </a>
+      <a routerLink="/invoices" routerLinkActive="active">
+        <span class="nav-icon">🧾</span>
+        Mes factures
+      </a>
+    </div>
+  </nav>
+
+  <main class="dashboard-main">
+    <router-outlet></router-outlet>
+  </main>
+</div>

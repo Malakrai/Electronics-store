@@ -18,53 +18,82 @@
 
   <main class="dashboard-main">
     <div class="container">
-      <div class="stats-grid">
-        <div class="stat-card alert">
-          <div class="stat-icon">⚠️</div>
-          <h3>Stocks Faibles</h3>
-          <p class="stat-number">{{ stats.lowStock }}</p>
-          <p class="stat-label">Produits à réapprovisionner</p>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">📋</div>
-          <h3>Commandes en Attente</h3>
-          <p class="stat-number">{{ stats.pendingOrders }}</p>
-          <p class="stat-label">À traiter</p>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">📦</div>
-          <h3>Produits en Stock</h3>
-          <p class="stat-number">{{ stats.totalProducts }}</p>
-          <p class="stat-label">Total disponible</p>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">📅</div>
-          <h3>Commandes Aujourd'hui</h3>
-          <p class="stat-number">{{ stats.todayOrders }}</p>
-          <p class="stat-label">À préparer</p>
-        </div>
+      <!-- Indicateur de chargement SIMPLE -->
+      <div *ngIf="isLoading" style="text-align: center; padding: 3rem;">
+        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        <p>Chargement en cours...</p>
+        <p><small>Veuillez patienter</small></p>
       </div>
 
-      <div class="actions-grid">
-        <div class="action-card" (click)="manageInventory()">
-          <div class="action-icon">📦</div>
-          <h4>Gestion des Stocks</h4>
-          <p>Vérifier et mettre à jour les niveaux de stock</p>
-          <button class="btn btn-primary">Gérer les stocks</button>
+      <!-- Contenu QUAND chargé -->
+      <div *ngIf="!isLoading">
+        <!-- Message d'erreur -->
+        <div *ngIf="errorMessage" style="background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+          ⚠️ {{ errorMessage }}
         </div>
-        <div class="action-card" (click)="processOrders()">
-          <div class="action-icon">🚚</div>
-          <h4>Commandes</h4>
-          <p>Traiter et préparer les commandes clients</p>
-          <button class="btn btn-primary">Voir les commandes</button>
+
+        <!-- Statistiques -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 2rem 0;">
+          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="font-size: 2rem;">⚠️</div>
+            <h3 style="margin: 0.5rem 0;">Stocks Faibles</h3>
+            <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0;">{{ stats.lowStock }}</p>
+            <p style="color: #666; margin: 0;">Produits à réapprovisionner</p>
+          </div>
+
+          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="font-size: 2rem;">📋</div>
+            <h3 style="margin: 0.5rem 0;">Commandes en Attente</h3>
+            <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0;">{{ stats.pendingOrders }}</p>
+            <p style="color: #666; margin: 0;">À traiter</p>
+          </div>
+
+          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="font-size: 2rem;">📦</div>
+            <h3 style="margin: 0.5rem 0;">Produits en Stock</h3>
+            <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0;">{{ stats.totalProducts }}</p>
+            <p style="color: #666; margin: 0;">Total disponible</p>
+          </div>
+
+          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="font-size: 2rem;">📅</div>
+            <h3 style="margin: 0.5rem 0;">Commandes Aujourd'hui</h3>
+            <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0;">{{ stats.todayOrders }}</p>
+            <p style="color: #666; margin: 0;">À préparer</p>
+            <small>📌 {{ todayDate | date:'dd/MM/yyyy' }}</small>
+          </div>
         </div>
-        <div class="action-card">
-          <div class="action-icon">📊</div>
-          <h4>Inventaire</h4>
-          <p>Consulter l'état complet de l'inventaire</p>
-          <button class="btn btn-primary">Voir l'inventaire</button>
+
+        <!-- Actions -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;" (click)="manageInventory()">
+            <div style="font-size: 2rem;">📦</div>
+            <h4 style="margin: 0.5rem 0;">Gestion des Stocks</h4>
+            <p style="color: #666;">Vérifier et mettre à jour les niveaux de stock</p>
+            <div *ngIf="stats.lowStock > 0" style="background: #ffeaa7; color: #d35400; padding: 0.25rem 0.75rem; border-radius: 20px; display: inline-block; margin: 0.5rem 0;">
+              {{ stats.lowStock }} stock(s) faible(s)
+            </div>
+            <br>
+            <button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; margin-top: 1rem; cursor: pointer;">
+              Gérer les stocks
+            </button>
+          </div>
+
+          <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;" (click)="processOrders()">
+            <div style="font-size: 2rem;">🚚</div>
+            <h4 style="margin: 0.5rem 0;">Commandes Clients</h4>
+            <p style="color: #666;">Traiter et préparer les commandes clients</p>
+            <div *ngIf="stats.pendingOrders > 0" style="background: #a29bfe; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; display: inline-block; margin: 0.5rem 0;">
+              {{ stats.pendingOrders }} en attente
+            </div>
+            <br>
+            <button style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; margin-top: 1rem; cursor: pointer;">
+              Voir les commandes
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </main>
 </div>
+

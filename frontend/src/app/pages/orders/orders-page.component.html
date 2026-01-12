@@ -1,0 +1,57 @@
+
+<section class="card page">
+  <div class="head">
+    <div>
+      <h1>Mes commandes</h1>
+    </div>
+    <input
+      class="input"
+      [(ngModel)]="q"
+      (ngModelChange)="onSearchChange()"
+      placeholder="Rechercher (id, email, date)..."
+    />
+  </div>
+
+  <div *ngIf="loading" class="muted">
+    Chargement… <span class="spinner"></span>
+  </div>
+
+
+  <div *ngIf="error && !loading" class="error-state">
+    <div class="error-content">
+      <div class="icon-error">⚠️</div>
+      <div>
+        <p>{{ error }}</p>
+        <button class="btn-retry" (click)="loadOrders()">Réessayer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="list" *ngIf="!loading && !error">
+    <div class="rowCard" *ngFor="let b of filteredOrders">
+      <div class="left">
+        <div class="title">Commande #{{ b.id }}</div>
+        <div class="meta">
+          {{ getFormattedDate(b.billDate) || 'Date inconnue' }} •
+          {{ getCustomerEmail(b) }}
+        </div>
+      </div>
+      <div class="right">
+        <span
+          class="badge"
+          [class.paid]="b.status === 'PAID'"
+          [class.pending]="b.status !== 'PAID'"
+        >
+          {{ getDisplayStatus(b.status) }}
+        </span>
+        <strong class="amount">{{ toNumber(b.totalAmount) | number:'1.2-2' }} €</strong>
+        <a class="btn outline" [routerLink]="['/orders', b.id]">Détails</a>
+      </div>
+    </div>
+
+    <div class="muted" *ngIf="filteredOrders.length === 0">
+      <div *ngIf="q.trim()">Aucune commande ne correspond à votre recherche.</div>
+      <div *ngIf="!q.trim()">Aucune commande pour le moment.</div>
+    </div>
+  </div>
+</section>

@@ -1,58 +1,81 @@
 <div class="container">
+
   <h2>Gestion des Utilisateurs</h2>
 
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
   <div class="card">
-    <h3>{{ isEditing ? 'Modifier l\'utilisateur' : 'Ajouter un nouvel utilisateur' }}</h3>
-    <form (ngSubmit)="isEditing ? updateUser() : createUser()">
-      <div class="form-group">
-        <input type="text" [(ngModel)]="currentUser.firstName" name="firstName" placeholder="Prénom" required>
+    <h3>{{ isEditing ? 'Modifier utilisateur' : 'Ajouter utilisateur' }}</h3>
+
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-grid">
+        <input placeholder="Prénom *" [(ngModel)]="formData.firstName" name="firstName">
+        <input placeholder="Nom *" [(ngModel)]="formData.lastName" name="lastName">
+        <input placeholder="Email *" [(ngModel)]="formData.email" name="email">
+
+        <input
+          type="password"
+          placeholder="{{ isEditing ? 'Mot de passe (optionnel)' : 'Mot de passe *' }}"
+          [(ngModel)]="formData.password"
+          name="password"
+        >
+
+        <input placeholder="Téléphone" [(ngModel)]="formData.phone" name="phone">
+        <textarea placeholder="Adresse" [(ngModel)]="formData.address" name="address"></textarea>
       </div>
-      <div class="form-group">
-        <input type="text" [(ngModel)]="currentUser.lastName" name="lastName" placeholder="Nom" required>
-      </div>
-      <div class="form-group">
-        <input type="email" [(ngModel)]="currentUser.email" name="email" placeholder="Email" required>
-      </div>
-      <div class="form-group" *ngIf="!isEditing">
-        <input type="password" [(ngModel)]="currentUser.password" name="password" placeholder="Mot de passe" required>
-      </div>
-      <div class="form-group">
-        <select [(ngModel)]="currentUser.role" name="role" required>
-          <option value="">Sélectionnez un rôle</option>
-          <option *ngFor="let role of roles" [value]="role">{{ role | titlecase }}</option>
-        </select>
-      </div>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Ajouter' }}</button>
-        <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="cancelEdit()">Annuler</button>
+
+      <div class="actions">
+        <button class="btn btn-primary" [disabled]="loading">
+          {{ isEditing ? 'Mettre à jour' : 'Créer' }}
+        </button>
+        <button *ngIf="isEditing" type="button" class="btn" (click)="cancelEdit()">
+          Annuler
+        </button>
       </div>
     </form>
   </div>
 
-  <div class="card mt-3">
-    <h3>Liste des utilisateurs ({{ users.length }})</h3>
-    <table class="table table-bordered">
+  <div class="card">
+    <table class="users-table">
       <thead>
       <tr>
-        <th>Prénom</th>
+        <th>ID</th>
         <th>Nom</th>
         <th>Email</th>
-        <th>Rôle</th>
+        <th>Rôles</th>
         <th>Actions</th>
       </tr>
       </thead>
+
       <tbody>
       <tr *ngFor="let user of users">
-        <td>{{ user.firstName }}</td>
-        <td>{{ user.lastName }}</td>
+        <td>{{ user.id }}</td>
+        <td>{{ user.firstName }} {{ user.lastName }}</td>
         <td>{{ user.email }}</td>
-        <td>{{ user.role | titlecase }}</td>
+
+        <!-- ✅ CORRECTION ICI -->
         <td>
-          <button class="btn btn-warning" (click)="editUser(user)">Modifier</button>
-          <button class="btn btn-danger" (click)="deleteUser(user)">Supprimer</button>
+          <ng-container *ngIf="user.roles as roles; else noRole">
+            <span class="role-badge">{{ roles.join(', ') }}</span>
+          </ng-container>
+
+          <ng-template #noRole>-</ng-template>
+        </td>
+
+        <td>
+          <button class="btn btn-sm" (click)="editUser(user)">✏️</button>
+          <button
+            class="btn btn-sm btn-danger"
+            (click)="deleteUser(user)"
+            [disabled]="loadingUserId === user.id"
+          >
+            🗑️
+          </button>
         </td>
       </tr>
       </tbody>
     </table>
   </div>
+
 </div>

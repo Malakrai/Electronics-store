@@ -16,7 +16,7 @@
   <!-- CUSTOMER CONNECTÉ -->
   <ng-container *ngIf="isAuthenticated() && isCustomer()">
     <button (click)="goTo('/customer/profile')">👤 Profil</button>
-    <button (click)="goTo('/customer/orders')">📦 Mes commandes</button>
+    <button (click)="goTo('/orders')">📦 Mes commandes</button>
     <button class="danger" (click)="logout()">🚪 Déconnexion</button>
   </ng-container>
 

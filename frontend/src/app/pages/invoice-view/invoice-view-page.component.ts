@@ -1,110 +1,343 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
-import { ApiService, MonthlyBill } from '../../services/api.service';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule, registerLocaleData } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ApiService } from '../../services/api.service';
+import { BillingService } from '../../services/billing.service';
+import { MonthlyBill, PaymentMethod, BillStatus, Customer } from '../../models/bill.model';
+import localeFr from '@angular/common/locales/fr';
+
+registerLocaleData(localeFr, 'fr');
 
 @Component({
   selector: 'app-invoice-view-page',
   standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
-  <div class="card">
-    <div class="top">
-      <h2>Invoice #{{ bill?.id }}</h2>
-      <div class="actions">
-        <a class="btn outline" routerLink="/invoices">Retour</a>
-        <button class="btn outline" (click)="download()" [disabled]="!bill">Télécharger PDF</button>
-      </div>
-    </div>
-
-    <div *ngIf="loading" class="box">Chargement...</div>
-    <div *ngIf="error" class="err">⚠️ {{ error }}</div>
-
-    <ng-container *ngIf="bill && !loading">
-      <p><strong>Date:</strong> {{ bill.billDate }}</p>
-      <p><strong>Client:</strong> {{ bill.customer?.email }}</p>
-      <p><strong>Statut:</strong> {{ bill.status }}</p>
-
-      <h3>Items</h3>
-      <table class="table" *ngIf="bill.items?.length">
-        <thead>
-          <tr><th>Description</th><th>Qté</th><th>PU</th><th>Total</th></tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let it of bill.items">
-            <td>{{ it.description }}</td>
-            <td>{{ it.quantity }}</td>
-            <td>{{ toNumber(it.unitPrice) | number:'1.2-2' }} €</td>
-            <td>{{ toNumber(it.lineTotal) | number:'1.2-2' }} €</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="total">Total: {{ toNumber(bill.totalAmount) | number:'1.2-2' }} €</div>
-    </ng-container>
-  </div>
-  `,
-  styles: [`
-    .card{ padding:18px; border-radius:16px; background:white; }
-    .top{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
-    .actions{ display:flex; gap:10px; }
-    .btn{ height:38px; padding:0 12px; border-radius:12px; border:1px solid transparent; background: rgba(109,40,217,.95); color:white; font-weight:900; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; }
-    .btn.outline{ background: transparent; color:#1b1033; border-color: rgba(89,50,164,.28); }
-    .box{ padding:12px; border:1px dashed #ddd; border-radius:12px; margin-top:12px;}
-    .err{ padding:12px; border-radius:12px; border:1px solid rgba(239,68,68,.35); background: rgba(239,68,68,.10); font-weight:800; margin-top:12px;}
-    .table{ width:100%; border-collapse:collapse; margin-top:10px; }
-    th, td{ padding:10px 8px; border-bottom:1px solid #eee; text-align:left; font-weight:700; }
-    th{ font-size:12px; opacity:.8; }
-    .total{ margin-top:14px; font-weight:900; font-size:18px; }
-  `]
+  imports: [CommonModule, FormsModule, RouterModule],
+  templateUrl: './invoice-view-page.component.html',
+  styleUrls: ['./invoice-view-page.component.css']
 })
 export class InvoiceViewPageComponent implements OnInit {
   bill: MonthlyBill | null = null;
-  loading = false;
+  loading = true;
   error = '';
+  printMode = false;
+  showDebug = true;
 
-  constructor(private api: ApiService, private route: ActivatedRoute) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private billingService: BillingService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('billId'));
-    this.load(id);
-  }
+    this.route.params.subscribe(params => {
+      const id = params['id'] || params['billId'];
+      console.log('🔍 ID récupéré:', id);
 
-  toNumber(v: any): number {
-    if (typeof v === 'number') return v;
-    if (typeof v === 'string') return Number(v.replace(',', '.'));
-    return 0;
-  }
-
-  load(id: number) {
-    this.loading = true;
-    this.error = '';
-
-    this.api.getBill(id).subscribe({
-      next: (bill) => {
-        this.bill = bill;
+      if (id && !isNaN(+id)) {
+        this.loadBill(+id);
+      } else {
+        this.error = `ID de facture invalide: ${id}`;
         this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-        this.error = 'Impossible de charger la facture.';
+        this.cdr.detectChanges();
       }
     });
   }
 
-  download() {
+  loadBill(id: number): void {
+    this.loading = true;
+    this.error = '';
+    this.cdr.detectChanges();
+
+    console.log('📞 Appel API pour la facture', id);
+
+    this.billingService.getBillById(id).subscribe({
+      next: (bill) => {
+        console.log('📦 Données brutes de la facture:', bill);
+        console.log('👤 Customer brut:', bill.customer);
+
+        const processedBill = { ...bill };
+
+        // Normalisation des items
+        if (!processedBill.items && processedBill.billItems) {
+          processedBill.items = processedBill.billItems;
+        }
+        if (!processedBill.items) processedBill.items = [];
+
+        // S'assurer que le customer existe et a les propriétés nécessaires
+        processedBill.customer = this.normalizeCustomer(processedBill.customer, id);
+
+        console.log('✅ Customer après normalisation:', processedBill.customer);
+
+        this.bill = processedBill;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('❌ Erreur:', err);
+        this.error = 'Erreur de chargement de la facture';
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private normalizeCustomer(customer: any, billId: number): Customer {
+    console.log('🔄 Normalisation du customer:', customer);
+
+    // Cas 1: customer est null ou undefined
+    if (!customer) {
+      console.log('⚠️ Customer est null/undefined, création d\'un fallback');
+      return {
+        id: billId,
+        firstName: 'Client',
+        lastName: 'Non spécifié',
+        email: '',
+        phone: ''
+      };
+    }
+
+    // Cas 2: customer est un ID (nombre ou chaîne)
+    if (typeof customer === 'number' || typeof customer === 'string') {
+      console.log('ℹ️ Customer est un ID:', customer);
+      return {
+        id: Number(customer),
+        firstName: 'Client',
+        lastName: '#' + customer,
+        email: '',
+        phone: ''
+      };
+    }
+
+    // Cas 3: customer est un objet mais peut-être vide ou avec des propriétés différentes
+    if (typeof customer === 'object') {
+      // Vérifier si c'est un objet vide
+      if (Object.keys(customer).length === 0) {
+        console.log('⚠️ Customer est un objet vide');
+        return {
+          id: billId,
+          firstName: 'Client',
+          lastName: 'Non spécifié',
+          email: '',
+          phone: ''
+        };
+      }
+
+      // Essayer de trouver les propriétés avec différents noms possibles
+      const normalized: Customer = {
+        id: this.extractProperty(customer, ['id', 'customerId', 'userId', 'clientId'], billId),
+        firstName: this.extractProperty(customer, ['firstName', 'firstname', 'name', 'username', 'nom', 'prenom'], 'Client'),
+        lastName: this.extractProperty(customer, ['lastName', 'lastname', 'surname', 'familyName'], ''),
+        email: this.extractProperty(customer, ['email', 'mail', 'e-mail'], ''),
+        phone: this.extractProperty(customer, ['phone', 'telephone', 'mobile', 'phoneNumber'], '')
+      };
+
+      console.log('✅ Customer normalisé:', normalized);
+      return normalized;
+    }
+
+    // Fallback par défaut
+    console.log('⚠️ Type de customer inconnu, fallback');
+    return {
+      id: billId,
+      firstName: 'Client',
+      lastName: 'Facture #' + billId,
+      email: '',
+      phone: ''
+    };
+  }
+
+  private extractProperty(obj: any, propertyNames: string[], defaultValue: any): any {
+    for (const propName of propertyNames) {
+      if (obj[propName] !== undefined && obj[propName] !== null && obj[propName] !== '') {
+        return obj[propName];
+      }
+    }
+    return defaultValue;
+  }
+
+  // Méthodes utilitaires pour le template
+  get itemsLength(): number {
+    return this.bill?.items?.length ?? 0;
+  }
+
+  get totalAmount(): number {
+    return this.bill?.totalAmount ?? 0;
+  }
+
+  getStatusLabel(status: BillStatus): string {
+    const statusMap: Record<BillStatus, string> = {
+      'PENDING': 'En attente',
+      'UNPAID': 'Impayée',
+      'PAID': 'Payée',
+      'CANCELLED': 'Annulée',
+      'CANCELED': 'Annulée',
+      'PARTIALLY_PAID': 'Partiellement payée'
+    };
+    return statusMap[status] || status;
+  }
+
+  formatCurrency(amount: number | undefined): string {
+    if (amount === undefined || amount === null) return '0,00 €';
+    try {
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(amount);
+    } catch {
+      return `${amount.toFixed(2).replace('.', ',')} €`;
+    }
+  }
+
+  downloadPdf(): void {
     if (!this.bill) return;
 
-    this.api.downloadBillPdf(this.bill.id).subscribe({
+    console.log('📄 Téléchargement du PDF pour la facture:', this.bill.id);
+
+    this.billingService.downloadBillPdf(this.bill.id).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `bill-${this.bill!.id}.pdf`;
+        a.download = `facture-${this.bill?.id}.pdf`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+
+        console.log('✅ PDF téléchargé avec succès');
       },
-      error: () => alert('PDF impossible à télécharger')
+      error: (error) => {
+        console.error('❌ Erreur lors du téléchargement:', error);
+        alert('Erreur lors du téléchargement du PDF. Veuillez réessayer.');
+      }
     });
+  }
+
+  goToPayment(): void {
+    if (this.bill) {
+      console.log('💳 Redirection vers le paiement:', this.bill.id);
+      this.router.navigate(['/checkout', this.bill.id]);
+    }
+  }
+
+  goBack(): void {
+    this.router.navigate(['/invoices']);
+  }
+
+  formatDate(dateString: string): string {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  canPay(): boolean {
+    if (!this.bill) return false;
+    const payableStatuses: BillStatus[] = ['PENDING', 'UNPAID', 'PARTIALLY_PAID'];
+    return payableStatuses.includes(this.bill.status);
+  }
+
+  printInvoice(): void {
+    window.print();
+  }
+
+  // Méthodes utilitaires pour le client (sécurisées)
+  hasCustomerInfo(): boolean {
+    if (!this.bill?.customer) {
+      console.log('❌ Pas de customer dans la facture');
+      return false;
+    }
+
+    const customer = this.bill.customer;
+
+    // Vérifier si au moins une propriété a une valeur
+    const hasInfo = !!(customer.id ||
+                      customer.firstName ||
+                      customer.lastName ||
+                      customer.email ||
+                      customer.phone);
+
+    console.log('🔍 Vérification infos client - Résultat:', hasInfo);
+    return hasInfo;
+  }
+
+  getCustomerFullName(): string {
+    if (!this.bill?.customer) {
+      return 'Client non spécifié';
+    }
+
+    const customer = this.bill.customer;
+
+    // Essayer de construire un nom complet
+    if (customer.firstName || customer.lastName) {
+      return `${customer.firstName || ''} ${customer.lastName || ''}`.trim();
+    }
+
+    // Fallback: utiliser l'email si disponible
+    if (customer.email) {
+      return customer.email;
+    }
+
+    // Fallback: utiliser l'ID
+    if (customer.id) {
+      return `Client #${customer.id}`;
+    }
+
+    return 'Client non spécifié';
+  }
+
+  getCustomerEmail(): string {
+    return this.bill?.customer?.email || '';
+  }
+
+  getCustomerPhone(): string {
+    return this.bill?.customer?.phone || '';
+  }
+
+  // CORRECTION ICI : Retourne toujours un nombre
+  getCustomerId(): number {
+    const id = this.bill?.customer?.id;
+    if (id === undefined || id === null) return 0;
+
+    // Convertir en nombre si possible
+    const numId = Number(id);
+    return isNaN(numId) ? 0 : numId;
+  }
+
+  // Méthode pour afficher l'ID comme chaîne
+  getCustomerIdDisplay(): string {
+    const id = this.getCustomerId();
+    return id > 0 ? String(id) : 'N/A';
+  }
+
+  // Méthodes de débogage
+  getCustomerDebugInfo(): any {
+    if (!this.bill?.customer) return null;
+
+    return {
+      raw: this.bill.customer,
+      id: this.bill.customer.id,
+      firstName: this.bill.customer.firstName,
+      lastName: this.bill.customer.lastName,
+      email: this.bill.customer.email,
+      phone: this.bill.customer.phone,
+      hasCustomerInfo: this.hasCustomerInfo(),
+      customerFullName: this.getCustomerFullName()
+    };
+  }
+
+  toggleDebug(): void {
+    this.showDebug = !this.showDebug;
   }
 }
