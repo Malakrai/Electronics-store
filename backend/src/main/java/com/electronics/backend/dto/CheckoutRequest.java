@@ -1,33 +1,95 @@
 package com.electronics.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CheckoutRequest {
 
-    private List<Item> items = new ArrayList<>();
-
-    // facultatif (tu peux laisser null)
+    private Long customerId;
     private String customerName;
     private String customerEmail;
+    private BigDecimal totalAmount;
+    private BigDecimal shippingAmount = BigDecimal.ZERO;
+    private List<Item> items = new ArrayList<>();
 
-    public List<Item> getItems() { return items; }
-    public void setItems(List<Item> items) { this.items = items; }
+    // Getters et Setters
+    public Long getCustomerId() {
+        return customerId;
+    }
 
-    public String getCustomerName() { return customerName; }
-    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
+    }
 
-    public String getCustomerEmail() { return customerEmail; }
-    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
+    public String getCustomerName() {
+        return customerName;
+    }
 
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getCustomerEmail() {
+        return customerEmail;
+    }
+
+    public void setCustomerEmail(String customerEmail) {
+        this.customerEmail = customerEmail;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public BigDecimal getShippingAmount() {
+        return shippingAmount;
+    }
+
+    public void setShippingAmount(BigDecimal shippingAmount) {
+        this.shippingAmount = shippingAmount;
+    }
+
+    public List<Item> getItems() {
+        return items;
+    }
+
+    public void setItems(List<Item> items) {
+        this.items = items;
+    }
+
+    // Classe Item interne
     public static class Item {
         private Long productId;
-        private int quantity;
+        private Integer quantity;
 
-        public Long getProductId() { return productId; }
-        public void setProductId(Long productId) { this.productId = productId; }
+        public Item() {}
 
-        public int getQuantity() { return quantity; }
-        public void setQuantity(int quantity) { this.quantity = quantity; }
+        public Item(Long productId, Integer quantity) {
+            this.productId = productId;
+            this.quantity = quantity;
+        }
+
+        public Long getProductId() {
+            return productId;
+        }
+
+        public void setProductId(Long productId) {
+            this.productId = productId;
+        }
+
+        public Integer getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(Integer quantity) {
+            this.quantity = quantity;
+        }
     }
 }

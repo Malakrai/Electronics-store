@@ -1,6 +1,7 @@
-package com.electronics.backend.service;
+package com.electronics.backend.services;
 
 import com.electronics.backend.model.BillItem;
+import com.electronics.backend.model.Customer;
 import com.electronics.backend.model.MonthlyBill;
 import com.electronics.backend.repository.MonthlyBillRepository;
 import com.lowagie.text.*;
@@ -104,14 +105,30 @@ public class InvoicePdfService {
         PdfPTable addr = new PdfPTable(new float[]{1f, 1f});
         addr.setWidthPercentage(100);
         addr.addCell(boxCell("Vendeur", "ElectroViolet\n1 Rue Exemple\n75000 Paris\nFrance", bold, normal, violet, bgSoft));
-        String buyer = "Client : " + (bill.getCustomer() != null ? bill.getCustomer().getEmail() : "") +
-                "\nAdresse : (non stockée)\nVille : (non stockée)\nPays : France";
+
+        // Amélioration des informations du client
+        // Dans la méthode generate() de InvoicePdfService, ligne ~100-120:
+        String buyer;
+        if (bill.getCustomer() != null) {
+            Customer customer = bill.getCustomer();
+            buyer = "Client : " + customer.getDisplayName() +
+                    "\nEmail : " + customer.getEmail() +
+                    "\nAdresse : " + (customer.getShippingAddress() != null ?
+                    customer.getShippingAddress() : customer.getAddress()) +
+                    "\nVille : " + (customer.getCity() != null ? customer.getCity() : "Non spécifiée") +
+                    "\nPays : " + (customer.getCountry() != null ? customer.getCountry() : "France");
+        } else {
+            buyer = "Client : Information non disponible\n" +
+                    "Adresse : Non spécifiée\n" +
+                    "Ville : Non spécifiée\n" +
+                    "Pays : France";
+        }
         addr.addCell(boxCell("Acheteur", buyer, bold, normal, violet, bgSoft));
         doc.add(addr);
 
         doc.add(Chunk.NEWLINE);
 
-        // ===== Items
+        // ===== Items - CORRECTION ICI (ligne 97 modifiée)
         PdfPTable items = new PdfPTable(new float[]{3.2f, 0.9f, 1.2f, 1.3f});
         items.setWidthPercentage(100);
 
@@ -122,8 +139,9 @@ public class InvoicePdfService {
 
         BigDecimal subtotal = BigDecimal.ZERO;
 
-        if (bill.getItems() != null) {
-            for (BillItem it : bill.getItems()) {
+        // CORRECTION : Utiliser getBillItems() au lieu de getItems()
+        if (bill.getBillItems() != null && !bill.getBillItems().isEmpty()) {
+            for (BillItem it : bill.getBillItems()) {
                 String desc = it.getDescription() != null ? it.getDescription() : "Item";
                 int q = it.getQuantity() != null ? it.getQuantity() : 1;
                 BigDecimal qty = BigDecimal.valueOf(q);
@@ -137,15 +155,22 @@ public class InvoicePdfService {
                 items.addCell(tdRight(money(unit), border));
                 items.addCell(tdRight(money(line), border));
             }
+        } else {
+            // Si pas d'items, afficher une ligne vide
+            items.addCell(td("Aucun article", border));
+            items.addCell(tdCenter("0", border));
+            items.addCell(tdRight("0.00 €", border));
+            items.addCell(tdRight("0.00 €", border));
         }
 
         doc.add(items);
         doc.add(Chunk.NEWLINE);
 
         // ===== Totals
-        BigDecimal vat = subtotal.multiply(new BigDecimal("0.20"));
-        BigDecimal shipping = BigDecimal.ZERO;
-        BigDecimal total = subtotal.add(vat).add(shipping);
+        // Utiliser les montants réels de la facture si disponibles
+        BigDecimal vat = bill.getTaxAmount() != null ? bill.getTaxAmount() : subtotal.multiply(new BigDecimal("0.20"));
+        BigDecimal shipping = bill.getShippingAmount() != null ? bill.getShippingAmount() : BigDecimal.ZERO;
+        BigDecimal total = bill.getTotalAmount() != null ? bill.getTotalAmount() : subtotal.add(vat).add(shipping);
 
         PdfPTable totals = new PdfPTable(new float[]{2.4f, 1f});
         totals.setWidthPercentage(45);
@@ -176,8 +201,21 @@ public class InvoicePdfService {
 
         doc.add(Chunk.NEWLINE);
 
+        // ===== Informations de paiement
+        if (bill.getStatus() != null) {
+            Paragraph statusInfo = new Paragraph("Statut du paiement : " + bill.getStatus().name(), bold);
+            statusInfo.setSpacingBefore(10);
+            doc.add(statusInfo);
+        }
+
+        if (bill.getOrder() != null && bill.getOrder().getOrderNumber() != null) {
+            Paragraph orderInfo = new Paragraph("Commande associée : " + bill.getOrder().getOrderNumber(), small);
+            doc.add(orderInfo);
+        }
+
         Paragraph foot = new Paragraph(
-                "Merci pour votre commande.\nCette facture est générée automatiquement.",
+                "Merci pour votre commande.\nCette facture est générée automatiquement.\n" +
+                        "Pour toute question, contactez support@electroviolet.com",
                 small
         );
         foot.setSpacingBefore(10);

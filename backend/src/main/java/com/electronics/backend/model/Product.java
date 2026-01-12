@@ -1,11 +1,15 @@
 package com.electronics.backend.model;
 
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Product {
 
     @Id
@@ -13,14 +17,16 @@ public class Product {
     @Column(name = "product_id")
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = true) // CHANGEMENT: nullable = true
     private String sku;
 
+    @NotBlank(message = "Le nom du produit est obligatoire")
     @Column(nullable = false)
     private String name;
 
     private String description;
 
+    @NotNull(message = "Le prix est obligatoire")
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
@@ -38,19 +44,18 @@ public class Product {
     private Boolean isActive = true;
 
     @Column(name = "created_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt = LocalDateTime.now();
-
-
 
     private String imageUrl;
 
     private String category;
 
-    private Integer stock;
+    private Integer stock = 0;
 
-    private String status; // active, inactive, rupture, commande
+    private String status = "ACTIVE";
 
-
+    // Constructeurs
     public Product() {}
 
     public Product(String sku, String name, BigDecimal price) {
@@ -59,14 +64,45 @@ public class Product {
         this.price = price;
     }
 
+    // Méthode PrePersist pour générer un SKU si vide
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
 
-    // GETTERS + SETTERS
+        // Générer un SKU unique si vide
+        if (sku == null || sku.trim().isEmpty()) {
+            sku = generateUniqueSku();
+        }
+
+        // Valeurs par défaut
+        if (isActive == null) {
+            isActive = true;
+        }
+
+        if (stock == null) {
+            stock = 0;
+        }
+
+        if (status == null || status.trim().isEmpty()) {
+            status = "ACTIVE";
+        }
+    }
+
+    private String generateUniqueSku() {
+        return "SKU-" + System.currentTimeMillis() + "-" +
+                (int)(Math.random() * 1000);
+    }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
     public String getSku() { return sku; }
-    public void setSku(String sku) { this.sku = sku; }
+    public void setSku(String sku) {
+        // Ne pas permettre les chaînes vides, convertir en null
+        this.sku = (sku == null || sku.trim().isEmpty()) ? null : sku.trim();
+    }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -92,12 +128,8 @@ public class Product {
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-
-    // 🆕 GETTERS / SETTERS DES CHAMPS AJOUTÉS
-
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
@@ -107,6 +139,17 @@ public class Product {
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    @Override
+    public String toString() {
+        return "Product{" +
+                "id=" + id +
+                ", sku='" + sku + '\'' +
+                ", name='" + name + '\'' +
+                ", price=" + price +
+                ", stock=" + stock +
+                '}';
+    }
+
 }
