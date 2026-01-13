@@ -1,26 +1,207 @@
-<div class="stats-container">
+<!-- Bouton pour ouvrir le sidebar -->
+<div class="stats-page">
 
-  <div class="stats-grid">
+  <div class="stats-header">
+    <h1>Tableau de bord</h1>
+    <p class="subtitle">Suivi des ventes, produits et catégories</p>
 
-    <div class="stat-card">
-      <h3>Total Orders</h3>
-      <p class="stat-value">{{ totalOrders }}</p>
+    <div class="filters-row">
+      <select [(ngModel)]="selectedYear" (change)="onYearChange()">
+        <option [ngValue]="2024">Année 2024</option>
+        <option [ngValue]="2025">Année 2025</option>
+        <option [ngValue]="2026">Année 2026</option>
+      </select>
+
+      <select [(ngModel)]="selectedMonth" (change)="onMonthChange()" [disabled]="monthOptions.length === 0">
+        <option value="">Tous les mois</option>
+        <option *ngFor="let m of monthOptions" [value]="m">{{ m }}</option>
+      </select>
+
+      <button class="refresh-btn" (click)="reload()">Actualiser</button>
     </div>
-
-    <div class="stat-card">
-      <h3>Total Customers</h3>
-      <p class="stat-value">{{ totalCustomers }}</p>
-    </div>
-
-    <div class="stat-card">
-      <h3>Total Revenue</h3>
-      <p class="stat-value">{{ monthlyRevenue }} €</p>
-    </div>
-
   </div>
-  <div class="chart-container">
-    <canvas id="ordersChartCanvas"></canvas>
+
+  <!-- Alert error -->
+  <div *ngIf="error" class="alert">
+    {{ error }}
   </div>
 
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-card">
+    <p>Chargement des statistiques…</p>
+  </div>
 
+  <ng-container *ngIf="!loading">
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+
+      <div class="kpi-card">
+        <div class="kpi-label">Total commandes</div>
+        <div class="kpi-value">{{ totalOrders }}</div>
+        <div class="kpi-hint">Année {{ selectedYear }}</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Clients</div>
+        <div class="kpi-value">{{ totalCustomers }}</div>
+        <div class="kpi-hint">Total clients</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Chiffre d’affaires</div>
+        <div class="kpi-value">{{ totalRevenue | number:'1.0-2' }} €</div>
+        <div class="kpi-hint">Année {{ selectedYear }}</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Articles / commande</div>
+        <div class="kpi-value">{{ itemsPerOrder | number:'1.0-2' }}</div>
+        <div class="kpi-hint">Moyenne</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Croissance</div>
+        <div class="kpi-metrics">
+          <div class="metric">
+            <span>MoM</span>
+            <span class="metric-val" [class.up]="momGrowth>0" [class.down]="momGrowth<0">
+              {{ momGrowth | number:'1.0-2' }}%
+            </span>
+          </div>
+          <div class="metric">
+            <span>YoY</span>
+            <span class="metric-val" [class.up]="yoyGrowth>0" [class.down]="yoyGrowth<0">
+              {{ yoyGrowth | number:'1.0-2' }}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Charts row -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Orders per Month</h3>
+        <div class="chart-container">
+          <canvas #ordersCanvas></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Revenue per Month</h3>
+        <div class="chart-container">
+          <canvas #revenueCanvas></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category row -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Category Share (%)</h3>
+        <div class="chart-container">
+          <canvas #categoryCanvas></canvas>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <h3>Category Margin ({{ selectedYear }})</h3>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+            <tr>
+              <th>Category</th>
+              <th class="num">Margin (€)</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let c of categoryMargin">
+              <td>{{ c.category }}</td>
+              <td class="num">{{ c.margin | number:'1.0-2' }}</td>
+            </tr>
+            <tr *ngIf="categoryMargin.length===0">
+              <td colspan="2" class="muted">Aucune donnée</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top products -->
+    <div class="top-products-card">
+      <div class="top-head">
+        <h3>Top Products</h3>
+
+        <div class="tabs">
+          <button class="tab" [class.active]="productTab==='month'" (click)="productTab='month'">Mois</button>
+          <button class="tab" [class.active]="productTab==='year'" (click)="productTab='year'">Année</button>
+          <button class="tab" [class.active]="productTab==='revenue'" (click)="productTab='revenue'">CA</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table" *ngIf="productTab==='month'">
+          <thead>
+          <tr>
+            <th>Produit</th>
+            <th class="num">Vendues</th>
+            <th class="num">CA (€)</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let p of topProductsMonth">
+            <td>{{ p.name }}</td>
+            <td class="num">{{ p.totalSold }}</td>
+            <td class="num">{{ p.revenue | number:'1.0-2' }}</td>
+          </tr>
+          <tr *ngIf="topProductsMonth.length===0">
+            <td colspan="3" class="muted">Aucune donnée</td>
+          </tr>
+          </tbody>
+        </table>
+
+        <table class="table" *ngIf="productTab==='year'">
+          <thead>
+          <tr>
+            <th>Produit</th>
+            <th class="num">Vendues</th>
+            <th class="num">CA (€)</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let p of topProductsYear">
+            <td>{{ p.name }}</td>
+            <td class="num">{{ p.totalSold }}</td>
+            <td class="num">{{ p.revenue | number:'1.0-2' }}</td>
+          </tr>
+          <tr *ngIf="topProductsYear.length===0">
+            <td colspan="3" class="muted">Aucune donnée</td>
+          </tr>
+          </tbody>
+        </table>
+
+        <table class="table" *ngIf="productTab==='revenue'">
+          <thead>
+          <tr>
+            <th>Produit</th>
+            <th class="num">CA (€)</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let p of topProductsRevenue">
+            <td>{{ p.name }}</td>
+            <td class="num">{{ p.revenue | number:'1.0-2' }}</td>
+          </tr>
+          <tr *ngIf="topProductsRevenue.length===0">
+            <td colspan="2" class="muted">Aucune donnée</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </ng-container>
 </div>

@@ -1,51 +1,78 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class StatisticsService {
-
   private baseUrl = 'http://localhost:8080/stats';
 
   constructor(private http: HttpClient) {}
 
-  // ------- IMPORTANT : ces 3 endpoints renvoient un nombre brut ---------
-  getTotalOrders(): Observable<number> {
-    return this.http.get<any>(`${this.baseUrl}/total-orders`)
-      .pipe(map(v => v.value));
+  // ===== KPI =====
+  getTotalOrders(year?: number): Observable<number> {
+    let params = new HttpParams();
+    if (year) params = params.set('year', year);
+    return this.http.get<any>(`${this.baseUrl}/total-orders`, { params }).pipe(map(v => Number(v.value ?? 0)));
   }
 
   getTotalCustomers(): Observable<number> {
-    return this.http.get<any>(`${this.baseUrl}/total-customers`)
-      .pipe(map(v => v.value));
+    return this.http.get<any>(`${this.baseUrl}/total-customers`).pipe(map(v => Number(v.value ?? 0)));
   }
 
-  getTotalRevenue(): Observable<number> {
-    return this.http.get<any>(`${this.baseUrl}/total-revenue`)
-      .pipe(map(v => v.value));
+  getTotalRevenue(year?: number): Observable<number> {
+    let params = new HttpParams();
+    if (year) params = params.set('year', year);
+    return this.http.get<any>(`${this.baseUrl}/total-revenue`, { params }).pipe(map(v => Number(v.value ?? 0)));
   }
 
-  // ---------------------- Listes JSON : OK -----------------------
-  getTopProducts(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/top-products`);
+  getItemsPerOrder(): Observable<number> {
+    return this.http.get<any>(`${this.baseUrl}/items-per-order`).pipe(map(v => Number(v.value ?? 0)));
   }
 
-  getTopClients(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/top-clients`);
+  // ===== TIME =====
+  getOrdersPerMonth(year?: number): Observable<any[]> {
+    let params = new HttpParams();
+    if (year) params = params.set('year', year);
+    return this.http.get<any[]>(`${this.baseUrl}/orders-per-month`, { params });
   }
 
-  getOrdersPerMonth(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/orders-per-month`);
+  getRevenueByMonth(year?: number): Observable<any[]> {
+    let params = new HttpParams();
+    if (year) params = params.set('year', year);
+    return this.http.get<any[]>(`${this.baseUrl}/revenue-by-month`, { params });
   }
 
-  getRevenueByMonth(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/revenue-by-month`);
+  // ===== PRODUCTS =====
+  getTopProducts(limit = 10): Observable<any[]> {
+    const params = new HttpParams().set('limit', limit);
+    return this.http.get<any[]>(`${this.baseUrl}/top-products`, { params });
   }
 
-  getStatsByCategory(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/category`);
+  getTopProductsMonth(month: string, limit = 10): Observable<any[]> {
+    const params = new HttpParams().set('month', month).set('limit', limit);
+    return this.http.get<any[]>(`${this.baseUrl}/top-products/month`, { params });
+  }
+
+  getTopProductsYear(year: number, limit = 10): Observable<any[]> {
+    const params = new HttpParams().set('year', year).set('limit', limit);
+    return this.http.get<any[]>(`${this.baseUrl}/top-products/year`, { params });
+  }
+
+  getTopProductsByRevenue(limit = 10): Observable<any[]> {
+    const params = new HttpParams().set('limit', limit);
+    return this.http.get<any[]>(`${this.baseUrl}/top-products/revenue`, { params });
+  }
+
+  // ===== CATEGORY =====
+  getCategoryShare(year?: number): Observable<any[]> {
+    let params = new HttpParams();
+    if (year) params = params.set('year', year);
+    return this.http.get<any[]>(`${this.baseUrl}/category/share`, { params });
+  }
+
+  getCategoryMargin(year?: number): Observable<any[]> {
+    let params = new HttpParams();
+    if (year) params = params.set('year', year);
+    return this.http.get<any[]>(`${this.baseUrl}/category/margin`, { params });
   }
 }
-

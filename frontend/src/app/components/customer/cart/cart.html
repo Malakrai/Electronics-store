@@ -1,45 +1,89 @@
 <div class="cart-page">
-  <h1>Mon panier</h1>
+  <div class="cart-header">
+    <h1>Mon Panier</h1>
+    <p class="subtitle" *ngIf="(items$ | async) as items">{{ items.length }} article(s)</p>
+  </div>
 
-  <div class="error" *ngIf="errorMsg">{{ errorMsg }}</div>
+  <div class="error-alert" *ngIf="errorMsg">
+    <span class="error-icon">⚠</span>
+    {{ errorMsg }}
+  </div>
 
   <ng-container *ngIf="items$ | async as items">
-    <div *ngIf="items.length === 0" class="empty">
-      Panier vide.
+    <div *ngIf="items.length === 0" class="empty-state">
+      <div class="empty-icon">🛒</div>
+      <h2>Votre panier est vide</h2>
+      <p>Commencez à ajouter des produits pour voir votre panier</p>
+      <a routerLink="/catalog" class="btn-continue-shopping">Continuer vos achats</a>
     </div>
 
-    <div *ngFor="let it of items" class="cart-item">
-      <img *ngIf="it.imageUrl" [src]="it.imageUrl" class="thumb" alt="" />
+    <div class="cart-container" *ngIf="items.length > 0">
+      <div class="cart-items">
+        <div *ngFor="let it of items" class="cart-item-card">
+          <div class="item-image">
+            <img *ngIf="it.imageUrl" [src]="it.imageUrl" alt="{{ it.productName }}" />
+          </div>
 
-      <div class="info">
-        <div class="name">{{ it.productName }}</div>
-        <div class="price">{{ it.price | number:'1.2-2' }} €</div>
+          <div class="item-details">
+            <h3 class="item-name">{{ it.productName }}</h3>
+            <p class="item-price">{{ it.price | number:'1.2-2' }} € / unité</p>
+          </div>
+
+          <div class="item-quantity">
+            <label>Quantité</label>
+            <div class="qty-control">
+              <button class="qty-btn" (click)="dec(it.productId)" [disabled]="it.quantity <= 1">−</button>
+              <span class="qty-value">{{ it.quantity }}</span>
+              <button class="qty-btn" (click)="inc(it.productId)">+</button>
+            </div>
+          </div>
+
+          <div class="item-subtotal">
+            <label>Sous-total</label>
+            <p class="price-value">{{ (it.price * it.quantity) | number:'1.2-2' }} €</p>
+          </div>
+
+          <button class="btn-remove" (click)="remove(it.productId)" title="Supprimer cet article">
+            ✕
+          </button>
+        </div>
       </div>
 
-      <div class="qty">
-        <button (click)="dec(it.productId)">-</button>
-        <span>{{ it.quantity }}</span>
-        <button (click)="inc(it.productId)">+</button>
-      </div>
+      <div class="cart-summary">
+        <div class="summary-header">
+          <h2>Résumé de la commande</h2>
+        </div>
 
-      <div class="line-total">
-        {{ (it.price * it.quantity) | number:'1.2-2' }} €
-      </div>
+        <div class="summary-row">
+          <span>Sous-total</span>
+          <span>{{ (total$ | async) | number:'1.2-2' }} €</span>
+        </div>
 
-      <button class="remove" (click)="remove(it.productId)">Supprimer</button>
-    </div>
+        <div class="summary-row">
+          <span>Frais de port</span>
+          <span class="free-shipping">Gratuit</span>
+        </div>
 
-    <div class="summary" *ngIf="items.length > 0">
-      <div class="total">
-        Total :
-        <strong>{{ (total$ | async) | number:'1.2-2' }} €</strong>
-      </div>
+        <div class="summary-divider"></div>
 
-      <div class="actions">
-        <button (click)="clear()">Vider</button>
-        <button (click)="checkout()" [disabled]="loading">
-          {{ loading ? 'En cours...' : 'Valider la commande' }}
-        </button>
+        <div class="summary-total">
+          <span>Total</span>
+          <strong>{{ (total$ | async) | number:'1.2-2' }} €</strong>
+        </div>
+
+        <div class="summary-actions">
+          <button class="btn-clear" (click)="clear()">
+            Vider le panier
+          </button>
+          <button class="btn-checkout" (click)="checkout()" [disabled]="loading">
+            <span *ngIf="!loading">Procéder au paiement</span>
+            <span *ngIf="loading">Traitement en cours...</span>
+          </button>
+        </div>
+
+        <a routerLink="/catalog" class="btn-continue-shopping-inline">
+          ← Continuer vos achats
+        </a>
       </div>
     </div>
   </ng-container>

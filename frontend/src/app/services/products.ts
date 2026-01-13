@@ -28,10 +28,12 @@ export class ProductService {
 }
 
 
-  // PUT : modifier un produit
- updateProduct(id: number, product: any) {
-  return this.http.put<any>(`${this.apiUrl}/update/${id}`, product);
-}
+ updateProduct(id: number, product: any): Observable<any> {
+   return this.http.put<any>(
+     `${this.apiUrl}/${id}`,   // ✅ SANS /update
+     product
+   );
+ }
 
 
   // DELETE : supprimer un produit
