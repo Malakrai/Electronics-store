@@ -356,3 +356,4 @@ export class LoginComponent implements OnInit {
 
   protected readonly console = console;
 }
+

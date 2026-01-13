@@ -1,7 +1,7 @@
-import { Component, OnInit, inject, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { SearchShared } from '../../../shared/search/search';
 import { ProductService } from '../../../services/products';
 import { Product } from '../../../models/product';
@@ -15,30 +15,40 @@ import { map } from 'rxjs/operators';
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchShared, Sidebar],
+  imports: [CommonModule, FormsModule, SearchShared, Sidebar, RouterModule],
   templateUrl: './catalog.html',
   styleUrls: ['./catalog.css']
 })
 export class Catalog implements OnInit {
   @ViewChild(Sidebar) sidebar!: Sidebar;
+
   categories: string[] = [
-    'Laptops',
-    'Phones',
-    'Tablets',
-    'Accessoires',
-    'Electronique'
+    'ordinateurs',
+    'telephonie',
+    'composants',
+    'pieces-detachees',
+    'systemes-embarques',
+    'reseau',
+    'audio',
+    'video',
+    'gaming',
+    'connectique',
+    'alimentation',
+    'outillage',
+    'diy',
+    'stockage',
+    'peripheriques'
   ];
 
-  selectedCategory = '';
-  selectedPriceRange = '';
+  selectedCategory: string = '';
+  selectedPriceRange: string = '';
   filteredProducts: Product[] = [];
   allProducts: Product[] = [];
-  currentFilters: any = {};
   searchTerm: string = '';
 
   cartCount$!: Observable<number>;
+  isCustomerLoggedIn: boolean = false;
 
-  // Inject services
   constructor(
     private productService: ProductService,
     private searchService: Search,
@@ -46,98 +56,114 @@ export class Catalog implements OnInit {
     private router: Router,
     private authService: AuthService
   ) {
-    // Calculer le nombre d’items dans le panier
     this.cartCount$ = this.cartService.items$.pipe(
       map(items => items.reduce((sum, i) => sum + i.quantity, 0))
     );
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadProducts();
+    this.checkIfCustomerLoggedIn();
   }
 
-  // Méthode pour naviguer vers login si non connecté
-  goLogin() {
+  checkIfCustomerLoggedIn(): void {
+    const user = this.authService.getCurrentUser();
+    this.isCustomerLoggedIn = user?.roles?.includes('customer') || false;
+  }
+
+  getLoginButtonText(): string {
     if (!this.authService.isAuthenticated()) {
-      this.router.navigateByUrl('/login');
+      return 'Connexion';
+    }
+    const user = this.authService.getCurrentUser();
+    return user?.roles?.includes('customer') ? 'Mon Compte' : 'Déconnexion';
+  }
+
+  handleLoginButton(): void {
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login'], { queryParams: { redirect: 'catalog' } });
+      return;
+    }
+
+    const user = this.authService.getCurrentUser();
+    if (user?.roles?.includes('customer')) {
+      this.router.navigate(['/account']);
     } else {
-      alert('Vous êtes déjà connecté !');
+      this.authService.logout();
+      this.router.navigate(['/login']);
     }
   }
-  openSidebar() {
-     this.sidebar.toggle();
-   }
 
-  loadProducts() {
+  openSidebar(): void {
+    this.sidebar.toggle();
+  }
+
+  loadProducts(): void {
     this.productService.getProducts().subscribe({
-      next: (data) => {
+      next: (data: Product[]) => {
         this.allProducts = data;
         this.filteredProducts = data;
+        this.extractCategories(data);
       },
-      error: (err) => {
-        console.error('Erreur chargement produits :', err);
-      }
+      error: (err) => console.error('Erreur chargement produits :', err)
     });
   }
 
-  onSearch(term: string) {
+  private extractCategories(products: Product[]): void {
+    const uniqueCategories = [...new Set(products.map(p => p.category))];
+    this.categories = uniqueCategories.filter(c => c);
+  }
+
+  onSearch(term: string): void {
     this.searchTerm = term;
-    const results = this.searchService.searchProducts(term, this.allProducts);
-    this.filteredProducts = this.applyFilters(results);
+    this.applyAllFilters();
   }
 
-  onFiltersChange(filters: any) {
-    this.currentFilters = filters;
-    this.applyFiltersToResults();
+  onFiltersChange(filters: any): void {
+    this.applyAllFilters();
   }
 
-  applyFiltersToResults() {
-    this.filteredProducts = this.applyFilters([...this.allProducts]);
-  }
+  applyAllFilters(): void {
+    let results = [...this.allProducts];
 
-  applyFilters(products: Product[]) {
-    let results = [...products];
-
-    if (this.currentFilters.category) {
-      results = results.filter(p => p.category === this.currentFilters.category);
+    if (this.searchTerm) {
+      results = this.searchService.searchProducts(this.searchTerm, results);
     }
 
-    if (this.currentFilters.priceRange) {
-      results = this.filterByPriceRange(results, this.currentFilters.priceRange);
+    if (this.selectedCategory) {
+      results = results.filter(p => p.category === this.selectedCategory);
     }
 
-    return results;
+    if (this.selectedPriceRange) {
+      results = this.filterByPriceRange(results, this.selectedPriceRange);
+    }
+
+    this.filteredProducts = results;
   }
 
-  filterByPriceRange(products: Product[], priceRange: string) {
+  filterByPriceRange(products: Product[], priceRange: string): Product[] {
     switch (priceRange) {
-      case '0-100': return products.filter(p => p.price <= 100);
-      case '100-500': return products.filter(p => p.price > 100 && p.price <= 500);
-      case '500-1000': return products.filter(p => p.price > 500 && p.price <= 1000);
-      case '1000+': return products.filter(p => p.price > 1000);
-      default: return products;
-    }
-  }
-
-  onCategoryChange(category: string) {
-    this.selectedCategory = category;
-    if (category === 'Tous') {
-      this.filteredProducts = [...this.allProducts];
-    } else {
-      this.filteredProducts = this.allProducts.filter(product => product.category === category);
+      case '0-100':
+        return products.filter(p => p.price <= 100);
+      case '100-500':
+        return products.filter(p => p.price > 100 && p.price <= 500);
+      case '500-1000':
+        return products.filter(p => p.price > 500 && p.price <= 1000);
+      case '1000+':
+        return products.filter(p => p.price > 1000);
+      default:
+        return products;
     }
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(price);
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
   }
 
-  addToCart(product: Product) {
+  addToCart(product: Product): void {
     if (!product.id) return;
 
+    // Ajouter au panier même sans être connecté
     this.cartService.addItem({
       productId: product.id,
       productName: product.name,
@@ -145,16 +171,21 @@ export class Catalog implements OnInit {
       quantity: 1,
       imageUrl: product.imageUrl
     });
+
+    // Message de confirmation
+    if (this.isCustomerLoggedIn) {
+      alert(`${product.name} a été ajouté au panier !`);
+    }
   }
 
-  goToCart() {
+  goToCart(): void {
     this.router.navigate(['/cart']);
   }
 
   getStatusText(status: string): string {
     const statusMap: { [key: string]: string } = {
       'active': 'En stock',
-      'inactive': 'Inactif',
+      'inactif': 'Inactif',
       'rupture': 'Rupture de stock',
       'commande': 'Sur commande'
     };
@@ -181,5 +212,4 @@ export class Catalog implements OnInit {
     };
     return categoryMap[category] || category;
   }
-
 }

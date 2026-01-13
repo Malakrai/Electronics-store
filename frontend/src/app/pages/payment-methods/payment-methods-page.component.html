@@ -1,0 +1,184 @@
+<section class="card">
+  <div class="card-header">
+    <div>
+      <h1>Moyens de paiement</h1>
+      <p class="subtitle">Gérez vos méthodes de paiement pour des achats plus rapides.</p>
+    </div>
+    <button class="btn primary" (click)="showAddForm = true" *ngIf="!showAddForm">
+      ➕ Ajouter un moyen de paiement
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Chargement de vos moyens de paiement...</p>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    ⚠️ {{ error }}
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Liste des méthodes de paiement existantes -->
+    <div class="payment-methods-list">
+      <div *ngFor="let method of paymentMethods" class="payment-method-card">
+        <div class="payment-method-header">
+          <div class="payment-method-icon">
+            {{ getBrandIcon(method.brand) }}
+          </div>
+          <div class="payment-method-info">
+            <div class="payment-method-type">
+              <strong>{{ getTypeLabel(method.type) }}</strong>
+              <span *ngIf="method.isDefault" class="default-badge">Par défaut</span>
+            </div>
+            <div class="payment-method-details">
+              <span *ngIf="method.type === 'CARD'">
+                {{ method.brand }} •••• {{ method.last4 }}
+              </span>
+              <span *ngIf="method.type === 'CARD'">
+                Expire le {{ getExpirationDate(method.expMonth, method.expYear) }}
+              </span>
+              <span *ngIf="method.type === 'PAYPAL'">
+                Compte PayPal
+              </span>
+              <span *ngIf="method.type === 'BANK_TRANSFER'">
+                Virement bancaire
+              </span>
+            </div>
+            <div class="payment-method-date">
+              Ajouté le {{ getFormattedDate(method.createdAt) }}
+            </div>
+          </div>
+        </div>
+
+        <div class="payment-method-actions">
+          <button class="btn outline"
+                  (click)="setDefaultMethod(method.id)"
+                  [disabled]="method.isDefault">
+            Définir par défaut
+          </button>
+          <button class="btn danger outline"
+                  (click)="removeMethod(method.id)">
+            Supprimer
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="paymentMethods.length === 0" class="empty-state">
+        <div class="empty-icon">💳</div>
+        <h3>Aucun moyen de paiement enregistré</h3>
+        <p>Ajoutez votre première méthode de paiement pour des achats plus rapides.</p>
+        <button class="btn primary" (click)="showAddForm = true">
+          Ajouter un moyen de paiement
+        </button>
+      </div>
+    </div>
+
+    <!-- Formulaire d'ajout -->
+    <div *ngIf="showAddForm" class="add-payment-form">
+      <div class="form-header">
+        <h3>Ajouter un moyen de paiement</h3>
+        <button class="btn close" (click)="showAddForm = false; resetForm()">×</button>
+      </div>
+
+      <div class="form-body">
+        <div class="form-group">
+          <label>Type de paiement *</label>
+          <select class="form-select" [(ngModel)]="newMethod.type">
+            <option value="CARD">Carte bancaire</option>
+            <option value="PAYPAL">PayPal</option>
+            <option value="BANK_TRANSFER">Virement bancaire</option>
+          </select>
+        </div>
+
+        <!-- Champs spécifiques pour carte bancaire -->
+        <div *ngIf="newMethod.type === 'CARD'">
+          <div class="form-group">
+            <label>Marque de la carte *</label>
+            <select class="form-select" [(ngModel)]="newMethod.brand">
+              <option value="VISA">Visa</option>
+              <option value="MASTERCARD">MasterCard</option>
+              <option value="AMEX">American Express</option>
+              <option value="DISCOVER">Discover</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>4 derniers chiffres *</label>
+              <input class="form-input"
+                     type="text"
+                     [(ngModel)]="newMethod.last4"
+                     placeholder="4242"
+                     maxlength="4"
+                     pattern="[0-9]{4}">
+              <small class="form-hint">Les 4 derniers chiffres de votre carte</small>
+            </div>
+
+            <div class="form-group">
+              <label>Mois d'expiration *</label>
+              <select class="form-select" [(ngModel)]="newMethod.expMonth">
+                <option *ngFor="let month of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="month">
+                  {{ month.toString().padStart(2, '0') }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Année d'expiration *</label>
+              <select class="form-select" [(ngModel)]="newMethod.expYear">
+                <option *ngFor="let year of getFutureYears(10)" [value]="year">
+                  {{ year }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Champs spécifiques pour PayPal -->
+        <div *ngIf="newMethod.type === 'PAYPAL'" class="paypal-info">
+          <div class="info-icon">🔵</div>
+          <div class="info-text">
+            <p><strong>Connexion PayPal</strong></p>
+            <p>Vous serez redirigé vers PayPal pour vous connecter et autoriser les paiements.</p>
+          </div>
+        </div>
+
+        <!-- Champs spécifiques pour virement bancaire -->
+        <div *ngIf="newMethod.type === 'BANK_TRANSFER'" class="bank-transfer-info">
+          <div class="info-icon">🏦</div>
+          <div class="info-text">
+            <p><strong>Virement bancaire</strong></p>
+            <p>Les détails de virement vous seront communiqués lors de la commande.</p>
+          </div>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="checkbox">
+            <input type="checkbox" [(ngModel)]="newMethod.isDefault">
+            <span>Définir comme méthode de paiement par défaut</span>
+          </label>
+          <small class="form-hint">Cette méthode sera utilisée automatiquement pour vos paiements</small>
+        </div>
+
+        <div *ngIf="error" class="error-message">
+          ⚠️ {{ error }}
+        </div>
+
+        <div class="form-actions">
+          <button class="btn outline" (click)="showAddForm = false; resetForm()">
+            Annuler
+          </button>
+          <button class="btn primary" (click)="addPaymentMethod()">
+            Ajouter le moyen de paiement
+          </button>
+        </div>
+
+        <div class="security-note">
+          🔒 <strong>Sécurité garantie</strong>
+          <p>Vos données de paiement sont cryptées et sécurisées. Nous ne stockons jamais le numéro complet de votre carte ni votre code de sécurité (CVV).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

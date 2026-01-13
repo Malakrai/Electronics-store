@@ -34,22 +34,6 @@ public class AuthController {
         this.qrService = qrService;
     }
 
-    @PostMapping("/admin/create-magasinier")
-    public ResponseEntity<?> createMagasinier(@RequestBody MagasinierCreationDto dto) {
-        try {
-            Magasinier magasinier = authService.createMagasinier(dto);
-
-            return ResponseEntity.ok(Map.of(
-                    "message", "Magasinier créé avec succès",
-                    "id", magasinier.getId(),
-                    "email", magasinier.getEmail(),
-                    "role", magasinier.getUserType()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
     @PostMapping("/admin/register")
     public ResponseEntity<?> registerAdmin(@RequestBody AdminRegistrationDto dto) {
         try {
@@ -119,7 +103,6 @@ public class AuthController {
                 return ResponseEntity.ok(response);
             }
 
-            // Utilisateurs sans 2FA (clients, magasiniers, admins sans 2FA)
             String jwt = jwtUtil.generateToken(user.getEmail(), user.getUserType());
 
             Map<String, Object> response = new HashMap<>();

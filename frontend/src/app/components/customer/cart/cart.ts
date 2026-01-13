@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 
-import { CartItem, CartService } from '../../../services/cart.service';
+import { CartItem, CartService, CheckoutResponse } from '../../../services/cart.service';
 import { AuthService } from '../../../services/auth.service';
 
 @Component({
@@ -30,20 +30,33 @@ export class CartComponent {
   clear() { this.cartService.clear(); }
 
   checkout() {
+    // Vérifier que le panier n'est pas vide
+    const items = this.cartService.getCurrentItems();
+    if (items.length === 0) {
+      this.errorMsg = 'Votre panier est vide.';
+      return;
+    }
+
+    // Si non connecté, rediriger vers login avec le bon returnUrl
     if (!this.authService.isAuthenticated()) {
-      alert('Vous devez être connecté pour passer une commande.');
-
-
+      alert('Vous devez vous connecter pour passer une commande.');
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: 'customer/delivery' }
+        queryParams: {
+          returnUrl: this.router.url // URL actuelle (/cart)
+        }
       });
       return;
     }
 
+    // Si connecté mais pas en tant que CUSTOMER
     if (!this.authService.isCustomer()) {
-      alert('Vous devez être connecté en tant que customer pour passer une commande.');
+      alert('Vous devez être connecté en tant que client pour passer une commande.');
+      this.authService.logout(); // Déconnexion forcée
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: 'customer/delivery' }
+        queryParams: {
+          returnUrl: '/cart',
+          message: 'Veuillez vous connecter avec un compte client'
+        }
       });
       return;
     }
@@ -52,28 +65,82 @@ export class CartComponent {
     this.errorMsg = '';
 
     this.cartService.checkout().subscribe({
-      next: () => {
+      next: (response: CheckoutResponse) => {
         this.loading = false;
+
+        const orderDetails = `
+Commande validée avec succès !
+
+Numéro de commande: #${response.orderId}
+Montant total: ${response.totalAmount.toFixed(2)} €
+Date: ${new Date(response.orderDate).toLocaleDateString('fr-FR')}
+        `;
+
+        alert(orderDetails);
+
+        // Vider le panier
         this.cartService.clear();
-        alert('Commande validée avec succès');
-        this.router.navigateByUrl('customer/delivery');
+
+        // Rediriger vers checkout avec l'ID de commande
+        if (response.orderId) {
+          this.router.navigate(['/checkout', response.orderId]);
+        } else {
+          this.router.navigate(['/checkout']);
+        }
       },
       error: (err) => {
         this.loading = false;
-
-        if (err.status === 401) {
-          alert('Session expirée. Veuillez vous reconnecter.');
-          this.authService.logout();
-          this.router.navigate(['/login'], { queryParams: { returnUrl: '/delivery' } });
-        }
-        else if (err.status === 403) {
-          alert('Accès interdit. Rôle CUSTOMER requis.');
-        }
-        else {
-          this.errorMsg = err?.error || 'Erreur lors du checkout';
-        }
+        this.handleCheckoutError(err);
       }
     });
   }
 
+  private handleCheckoutError(err: any): void {
+    console.error('Erreur checkout:', err);
+
+    let message = 'Erreur lors de la validation de la commande.';
+
+    if (err.status === 401) {
+      message = 'Session expirée. Veuillez vous reconnecter.';
+      this.authService.logout();
+      this.router.navigate(['/login'], {
+        queryParams: {
+          returnUrl: '/cart',
+          message: 'Session expirée'
+        }
+      });
+      return;
+    }
+
+    if (err.status === 403) {
+      message = 'Accès interdit. Rôle CLIENT requis.';
+      this.router.navigate(['/login'], {
+        queryParams: {
+          returnUrl: '/cart',
+          message: 'Compte client requis'
+        }
+      });
+      return;
+    }
+
+    if (err.status === 400) {
+      message = err.error?.message || 'Données de commande invalides.';
+    }
+
+    if (err.status === 404) {
+      message = 'Produit non disponible.';
+    }
+
+    if (err.status === 500) {
+      message = 'Erreur serveur. Veuillez réessayer plus tard.';
+    }
+
+    this.errorMsg = message;
+    alert(message);
+  }
+
+  // Méthode pour voir si l'utilisateur peut passer commande
+  canCheckout(): boolean {
+    return this.authService.isAuthenticated() && this.authService.isCustomer();
+  }
 }

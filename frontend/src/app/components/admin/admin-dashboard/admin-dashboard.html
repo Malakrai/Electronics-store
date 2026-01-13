@@ -25,26 +25,55 @@
           <div class="stat-card">
             <div class="stat-icon">👥</div>
             <h3>Utilisateurs Total</h3>
-            <p class="stat-number">{{ isLoading ? '...' : stats.totalUsers }}</p>
-            <p class="stat-label">{{ stats.activeUsers }} actifs</p>
+            <p class="stat-number">
+              {{ isLoading ? '...' : stats.totalUsers }}
+            </p>
+            <p class="stat-label">
+              <span class="active-users">{{ stats.activeUsers }}</span> actifs
+            </p>
+            <div class="stat-progress" *ngIf="!isLoading && stats.totalUsers > 0">
+              <div class="progress-fill"
+                   [style.width.%]="(stats.activeUsers / stats.totalUsers * 100)"></div>
+            </div>
           </div>
+
           <div class="stat-card">
             <div class="stat-icon">📦</div>
             <h3>Produits</h3>
-            <p class="stat-number">{{ isLoading ? '...' : stats.totalProducts }}</p>
+            <p class="stat-number">
+              {{ isLoading ? '...' : stats.totalProducts }}
+            </p>
             <p class="stat-label">En catalogue</p>
+            <p class="stat-alert" *ngIf="!isLoading && stats.lowStockProducts > 0">
+              ⚠ {{ stats.lowStockProducts }} stock bas
+            </p>
           </div>
+
+          <!-- Carte 3: Commandes -->
           <div class="stat-card">
             <div class="stat-icon">🛒</div>
             <h3>Commandes</h3>
-            <p class="stat-number">{{ isLoading ? '...' : stats.totalOrders }}</p>
+            <p class="stat-number">
+              {{ isLoading ? '...' : stats.totalOrders }}
+            </p>
             <p class="stat-label">Ce mois</p>
+            <div class="stat-trend" *ngIf="!isLoading">
+        <span [ngClass]="stats.monthlyGrowth >= 0 ? 'trend-up' : 'trend-down'">
+          {{ stats.monthlyGrowth >= 0 ? '↗' : '↘' }}
+        </span>
+              <span>{{ stats.monthlyGrowth >= 0 ? '+' : '' }}{{ stats.monthlyGrowth }}%</span>
+            </div>
           </div>
+
+          <!-- Carte 4: Votre Rôle -->
           <div class="stat-card">
             <div class="stat-icon">💼</div>
             <h3>Votre Rôle</h3>
             <p class="stat-number">ADMIN</p>
             <p class="stat-label">Accès complet</p>
+            <div class="stat-badge" *ngIf="currentUser">
+              {{ currentUser.firstName }} {{ currentUser.lastName }}
+            </div>
           </div>
         </div>
       </section>
@@ -59,16 +88,17 @@
             <p>Gérer les comptes utilisateurs et permissions</p>
             <button class="btn btn-primary">Accéder</button>
           </div>
-          <div class="action-card" (click)="manageProducts()">
+          <div class="action-card">
             <div class="action-icon">📦</div>
             <h4>Gestion Produits</h4>
             <p>Gérer le catalogue produits et stocks</p>
             <button class="btn btn-primary">Accéder</button>
           </div>
-          <div class="action-card" routerLink="/admin/statistics">
+          <div class="action-card" (click)="statistiques()">
             <div class="action-icon">📊</div>
             <h4>Rapports</h4>
             <p>Consulter les statistiques et analyses</p>
+            <button class="btn btn-primary">Accéder</button>
           </div>
         </div>
       </section>

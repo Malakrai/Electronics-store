@@ -1,0 +1,398 @@
+<div class="layout">
+
+  <section class="left card">
+    <div class="head">
+      <h2 class="title">Electronic store checkout</h2>
+      <button class="btn outline" type="button" (click)="loadBill()" [disabled]="loading">
+        {{ loading ? 'Chargement...' : 'Rafraîchir' }}
+      </button>
+    </div>
+
+    <div *ngIf="loading" class="cardbox">
+      <div class="loading-spinner"></div>
+      Chargement en cours...
+    </div>
+
+    <div *ngIf="error && !loading" class="error">
+      ⚠️ {{ error }}
+    </div>
+
+    <ng-container *ngIf="!loading && !error">
+
+      <!-- SI PAS DE FACTURE -->
+      <div *ngIf="!billToPay" class="cardbox">
+        <strong>Aucune facture à payer.</strong>
+        <div class="small" style="margin-top:8px;">
+          Créez une facture de test pour continuer le processus de paiement.
+        </div>
+
+        <div class="actions">
+          <button class="btn" type="button" (click)="createTestBillForDemo()" [disabled]="creatingTestBill">
+            {{ creatingTestBill ? 'Création en cours...' : 'Créer facture test' }}
+          </button>
+          <button class="btn outline" type="button" (click)="loadBill()">
+            Recharger
+          </button>
+        </div>
+
+        <div *ngIf="createBillError" class="error" style="margin-top:12px;">
+          ⛔ Impossible de créer la facture test.
+        </div>
+      </div>
+
+      <!-- SI FACTURE DISPONIBLE -->
+      <ng-container *ngIf="billToPay">
+
+        <div class="stepper">
+          <div class="step" [class.active]="step===1" [class.completed]="step>1">
+            <div class="step-number">1</div>
+            <div class="step-label">Adresse</div>
+          </div>
+          <div class="step" [class.active]="step===2" [class.completed]="step>2">
+            <div class="step-number">2</div>
+            <div class="step-label">Livraison</div>
+          </div>
+          <div class="step" [class.active]="step===3">
+            <div class="step-number">3</div>
+            <div class="step-label">Paiement</div>
+          </div>
+        </div>
+
+        <!-- STEP 1 : ADRESSE -->
+        <div *ngIf="step===1" class="box">
+          <h3>Adresse de livraison</h3>
+
+          <div class="customer-info" *ngIf="billToPay.customer">
+            <div class="info-row">
+              <span class="info-label">Client :</span>
+              <span class="info-value">{{ getCustomerFullName() }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email :</span>
+              <span class="info-value">{{ getCustomerEmail() }}</span>
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div>
+              <label for="fullName">Nom complet *</label>
+              <input id="fullName" class="input" [(ngModel)]="address.fullName"
+                     placeholder="Nom complet" required />
+            </div>
+            <div>
+              <label for="phone">Téléphone *</label>
+              <input id="phone" class="input" [(ngModel)]="address.phone"
+                     placeholder="06 12 34 56 78" required />
+            </div>
+          </div>
+
+          <div>
+            <label for="address">Adresse *</label>
+            <input id="address" class="input" [(ngModel)]="address.line1"
+                   placeholder="Rue, numéro, appartement..." required />
+          </div>
+
+          <div class="grid2">
+            <div>
+              <label for="city">Ville *</label>
+              <input id="city" class="input" [(ngModel)]="address.city"
+                     placeholder="Paris" required />
+            </div>
+            <div>
+              <label for="zip">Code postal *</label>
+              <input id="zip" class="input" [(ngModel)]="address.zip"
+                     placeholder="75000" required />
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn" type="button" (click)="next()" [disabled]="!validAddress()">
+              Continuer vers la livraison
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 2 : LIVRAISON -->
+        <div *ngIf="step===2" class="box">
+          <h3>Mode de livraison</h3>
+
+          <div class="address-summary" *ngIf="validAddress()">
+            <strong>Livraison à :</strong>
+            <div>{{ address.fullName }}</div>
+            <div>{{ address.line1 }}</div>
+            <div>{{ address.zip }} {{ address.city }}</div>
+            <div>Téléphone : {{ address.phone }}</div>
+          </div>
+
+          <div class="ship-options">
+            <button type="button" class="opt" [class.selected]="shipping.method==='Standard'"
+                    (click)="selectShipping('Standard')">
+              <div class="opt-header">
+                <div class="opt-title">Livraison Standard</div>
+                <div class="opt-price">Gratuite</div>
+              </div>
+              <div class="opt-sub">3-5 jours ouvrables</div>
+              <div class="opt-desc">Livraison à domicile sans signature</div>
+            </button>
+
+            <button type="button" class="opt" [class.selected]="shipping.method==='Express'"
+                    (click)="selectShipping('Express')">
+              <div class="opt-header">
+                <div class="opt-title">Livraison Express</div>
+                <div class="opt-price">9,90 €</div>
+              </div>
+              <div class="opt-sub">24-48 heures</div>
+              <div class="opt-desc">Livraison prioritaire avec suivi et signature</div>
+            </button>
+          </div>
+
+          <div class="shipping-summary" *ngIf="shipping.price > 0">
+            <div class="summary-row">
+              <span>Frais de livraison :</span>
+              <strong>{{ shipping.price | number:'1.2-2' }} €</strong>
+            </div>
+            <div class="summary-row">
+              <span>Délai estimé :</span>
+              <strong>{{ shipping.eta }}</strong>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn outline" type="button" (click)="prev()">
+              ← Retour à l'adresse
+            </button>
+            <button class="btn" type="button" (click)="next()">
+              Continuer vers le paiement
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3 : PAIEMENT -->
+        <div *ngIf="step===3" class="box">
+          <h3>Méthode de paiement</h3>
+
+          <div class="order-summary">
+            <div class="summary-header">Récapitulatif de la commande</div>
+            <div class="summary-row">
+              <span>Articles :</span>
+              <span>{{ subtotal | number:'1.2-2' }} €</span>
+            </div>
+            <div class="summary-row">
+              <span>Livraison :</span>
+              <span>{{ shipping.price | number:'1.2-2' }} €</span>
+            </div>
+            <div class="summary-row">
+              <span>TVA (20%) :</span>
+              <span>{{ vat | number:'1.2-2' }} €</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total à payer :</span>
+              <strong>{{ total | number:'1.2-2' }} €</strong>
+            </div>
+          </div>
+
+          <div class="pay-methods">
+            <div class="pay-grid">
+              <button type="button" class="pay-opt" [class.selected]="payment.method==='CARD'"
+                      (click)="payment.method='CARD'">
+                <div class="pay-icon">💳</div>
+                <div class="pay-label">Carte bancaire</div>
+              </button>
+              <button type="button" class="pay-opt" [class.selected]="payment.method==='PAYPAL'"
+                      (click)="payment.method='PAYPAL'">
+                <div class="pay-icon">🔵</div>
+                <div class="pay-label">PayPal</div>
+              </button>
+              <button type="button" class="pay-opt" [class.selected]="payment.method==='BANK_TRANSFER'"
+                      (click)="payment.method='BANK_TRANSFER'">
+                <div class="pay-icon">🏦</div>
+                <div class="pay-label">Virement</div>
+              </button>
+              <button type="button" class="pay-opt" [class.selected]="payment.method==='CASH'"
+                      (click)="payment.method='CASH'">
+                <div class="pay-icon">💵</div>
+                <div class="pay-label">Espèces</div>
+              </button>
+            </div>
+
+            <!-- CARTE BANCAIRE -->
+            <div class="payment-details" *ngIf="payment.method==='CARD'">
+              <div class="grid2">
+                <div>
+                  <label>Nom sur la carte *</label>
+                  <input class="input" [(ngModel)]="payment.cardName"
+                         placeholder="JEAN DUPONT" required />
+                </div>
+                <div>
+                  <label>Numéro de carte *</label>
+                  <input class="input" [(ngModel)]="payment.cardNumber"
+                         placeholder="4242 4242 4242 4242"
+                         (input)="formatCardNumber($event)" required />
+                </div>
+              </div>
+              <div class="grid2">
+                <div>
+                  <label>Date d'expiration (MM/AA) *</label>
+                  <input class="input" [(ngModel)]="payment.exp"
+                         placeholder="12/29" maxlength="5" required />
+                </div>
+                <div>
+                  <label>CVV *</label>
+                  <input class="input" [(ngModel)]="payment.cvv"
+                         placeholder="123" type="password" maxlength="3" required />
+                </div>
+              </div>
+              <div class="payment-note">
+                💡 Données de test : Carte 4242 4242 4242 4242, date 12/29, CVV 123
+              </div>
+            </div>
+
+            <!-- PAYPAL -->
+            <div class="payment-details" *ngIf="payment.method==='PAYPAL'">
+              <label>Email PayPal *</label>
+              <input class="input" [(ngModel)]="payment.paypalEmail"
+                     placeholder="votre@email.com" type="email" required />
+              <div class="payment-note">
+                🔵 Vous serez redirigé vers PayPal pour confirmer le paiement
+              </div>
+            </div>
+
+            <!-- VIREMENT BANCAIRE -->
+            <div class="payment-details" *ngIf="payment.method==='BANK_TRANSFER'">
+              <label>IBAN *</label>
+              <input class="input" [(ngModel)]="payment.iban"
+                     placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX" required />
+              <div class="payment-info">
+                <strong>Informations pour le virement :</strong>
+                <div>Bénéficiaire : ElectroViolet SARL</div>
+                <div>Banque : BNP Paribas</div>
+                <div>Référence : <strong>BILL-{{ billToPay.id }}</strong></div>
+                <div>Montant : <strong>{{ total | number:'1.2-2' }} €</strong></div>
+              </div>
+            </div>
+
+            <!-- ESPÈCES -->
+            <div class="payment-details" *ngIf="payment.method==='CASH'">
+              <div class="cash-info">
+                <div class="cash-icon">💰</div>
+                <div class="cash-text">
+                  <strong>Paiement en espèces</strong>
+                  <p>Préparez le montant exact de <strong>{{ total | number:'1.2-2' }} €</strong></p>
+                  <p>Le paiement sera effectué à la livraison</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="terms">
+            <label class="checkbox">
+              <input type="checkbox" [(ngModel)]="termsAccepted" />
+              <span>J'accepte les <a href="#" class="link">conditions générales de vente</a></span>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button class="btn outline" type="button" (click)="prev()" [disabled]="isPaying">
+              ← Retour à la livraison
+            </button>
+            <button class="btn success" type="button" (click)="confirm()"
+                    [disabled]="isPaying || !validPayment() || !termsAccepted">
+              <span *ngIf="!isPaying">💳 Payer {{ total | number:'1.2-2' }} €</span>
+              <span *ngIf="isPaying">
+                <div class="spinner"></div>
+                Traitement en cours...
+              </span>
+            </button>
+          </div>
+
+          <div *ngIf="payError" class="error">
+            <div class="error-icon">❌</div>
+            <div class="error-text">
+              <strong>Échec du paiement</strong>
+              <p>Veuillez vérifier vos informations ou essayer une autre méthode de paiement.</p>
+            </div>
+          </div>
+
+          <div class="security-note">
+            🔒 Paiement sécurisé - Vos données sont cryptées et protégées
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+  </section>
+
+  <aside class="right">
+
+    <!-- CARD DES BOUTONS DE NAVIGATION -->
+    <div class="card sidebar-nav-card">
+      <div class="sidebar-nav-buttons">
+        <a class="sidebar-nav-btn" (click)="backToCatalog()">
+          <span class="nav-icon">🛒</span>
+          <span class="nav-label">Catalogue</span>
+        </a>
+        <a routerLink="/orders" routerLinkActive="active" class="sidebar-nav-btn">
+          <span class="nav-icon">📦</span>
+          <span class="nav-label">Commandes</span>
+        </a>
+        <a routerLink="/invoices" routerLinkActive="active" class="sidebar-nav-btn">
+          <span class="nav-icon">🧾</span>
+          <span class="nav-label">Factures</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- CARD DU SUMMARY -->
+    <div class="card summary-card" *ngIf="billForSummary && !loading">
+      <div class="head">
+        <h3>Résumé</h3>
+        <span class="pill">TVA incluse</span>
+      </div>
+
+      <div *ngIf="billForSummary.items && billForSummary.items.length > 0">
+        <div class="row" *ngFor="let it of billForSummary.items">
+          <div>
+            <div class="itemTitle">{{ it.description }}</div>
+            <div class="small">Qté {{ it.quantity }}</div>
+          </div>
+          <strong>{{ toNumber(it.lineTotal) | number:'1.2-2' }} €</strong>
+        </div>
+        <hr class="sep" />
+      </div>
+
+      <div class="row">
+        <span>Sous-total</span>
+        <strong>{{ subtotal | number:'1.2-2' }} €</strong>
+      </div>
+
+      <div class="row">
+        <span>Livraison</span>
+        <strong>{{ shipping.price | number:'1.2-2' }} €</strong>
+      </div>
+
+      <div class="row">
+        <span>TVA (20%)</span>
+        <strong>{{ vat | number:'1.2-2' }} €</strong>
+      </div>
+
+      <hr class="sep" />
+
+      <div class="row total">
+        <span>Total</span>
+        <strong>{{ total | number:'1.2-2' }} €</strong>
+      </div>
+
+      <div class="actions" style="margin-top:12px;">
+        <button class="btn outline full" type="button" (click)="downloadPdf()" [disabled]="downloadingPdf || !billForSummary">
+          {{ downloadingPdf ? 'Téléchargement…' : 'Télécharger la facture PDF' }}
+        </button>
+      </div>
+
+      <div *ngIf="pdfError" class="error" style="margin-top:10px;">
+        ⛔ PDF impossible à télécharger.
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+

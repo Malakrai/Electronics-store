@@ -1,52 +1,95 @@
 package com.electronics.backend.controller;
 
 import com.electronics.backend.dto.CheckoutRequest;
-import com.electronics.backend.model.Order;
+import com.electronics.backend.dto.CheckoutResponse;
 import com.electronics.backend.services.OrderService;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
+@CrossOrigin(origins = "*")
 public class OrderController {
 
-    private final OrderService orderService;
+    @Autowired
+    private OrderService orderService;
 
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
-    }
-
-    @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/checkout")
     public ResponseEntity<?> checkout(@RequestBody CheckoutRequest request) {
         try {
-            // Création de la commande
-            Order order = orderService.createOrder(request);
+            System.out.println("========== CHECKOUT REQUEST RECEIVED ==========");
+            System.out.println("Customer ID: " + request.getCustomerId());
+            System.out.println("Customer Name: " + request.getCustomerName());
+            System.out.println("Customer Email: " + request.getCustomerEmail());
+            System.out.println("Total Amount: " + request.getTotalAmount());
+            System.out.println("Shipping Amount: " + request.getShippingAmount());
 
-            // Vérification si la commande a été créée
-            if (order == null) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Erreur lors de la création de la commande.");
+            // Log des articles
+            if (request.getItems() != null) {
+                System.out.println("Items (" + request.getItems().size() + "):");
+                for (int i = 0; i < request.getItems().size(); i++) {
+                    CheckoutRequest.Item item = request.getItems().get(i);
+                    System.out.println("  " + (i + 1) + ". ProductId: " + item.getProductId() +
+                            ", Quantity: " + item.getQuantity());
+                }
+            } else {
+                System.out.println("No items in request!");
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "No items in cart"));
             }
 
-            // Réponse OK avec la commande
-            return ResponseEntity.ok(order);
+            CheckoutResponse response = orderService.processCheckout(request);
 
+            System.out.println("Checkout successful!");
+            System.out.println("Order Number: " + response.getOrderNumber());
+            System.out.println("Order Total: " + response.getTotalAmount());
+            System.out.println("Bill ID: " + response.getBillId());
+            System.out.println("========== CHECKOUT COMPLETED ==========");
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            System.err.println("Validation error: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of(
+                            "error", "Checkout validation failed",
+                            "message", e.getMessage()
+                    ));
         } catch (Exception e) {
-            e.printStackTrace(); // Log complet pour debug
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Une erreur est survenue: " + e.getMessage());
+            System.err.println("Server error during checkout:");
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of(
+                            "error", "Checkout failed",
+                            "message", e.getMessage(),
+                            "timestamp", java.time.LocalDateTime.now()
+                    ));
         }
     }
 
-    // Récupérer toutes les commandes
+    // Ajoutez d'autres endpoints si nécessaire
     @GetMapping
-    public ResponseEntity<List<Order>> getAllOrders() {
-        List<Order> orders = orderService.getAllOrders();
-        return ResponseEntity.ok(orders);
+    public ResponseEntity<?> getAllOrders() {
+        try {
+            return ResponseEntity.ok(orderService.getAllOrders());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Failed to get orders"));
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getOrder(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(orderService.getOrderById(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Failed to get order"));
+        }
     }
 }

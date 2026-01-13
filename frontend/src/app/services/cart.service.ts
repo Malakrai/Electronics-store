@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { AuthService } from './auth.service';
 
 export interface CartItem {
   productId: number;
@@ -11,15 +12,27 @@ export interface CartItem {
   imageUrl?: string;
 }
 
+export interface CheckoutResponse {
+  orderId: number;
+  orderNumber?: string;
+  totalAmount: number;
+  orderDate: string;
+  billId?: number;
+  status?: string;
+}
+
 interface CheckoutItemDto {
   productId: number;
   quantity: number;
 }
 
-interface CheckoutRequestDto {
+interface CheckoutRequest {
   items: CheckoutItemDto[];
-  customerName?: string | null;
-  customerEmail?: string | null;
+  customerId?: number;
+  customerName?: string;
+  customerEmail?: string;
+  totalAmount: number;
+  shippingAmount?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -29,15 +42,16 @@ export class CartService {
 
   private readonly _items$ = new BehaviorSubject<CartItem[]>(this.loadFromStorage());
 
-  /** Liste panier */
   readonly items$: Observable<CartItem[]> = this._items$.asObservable();
 
-  /** Total en € */
   readonly total$: Observable<number> = this.items$.pipe(
     map(items => items.reduce((sum, i) => sum + i.price * i.quantity, 0))
   );
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
 
   // ---------- CRUD panier ----------
   addItem(item: CartItem) {
@@ -56,14 +70,13 @@ export class CartService {
     this.setItems(next);
   }
 
-  /** Compat avec ton code si tu appelles cartService.add(...) */
-  add(payload: { productId: number; name: string; price: number; quantity?: number; imageUrl?: string }) {
+  add(productId: number, productName: string, price: number, imageUrl?: string): void {
     this.addItem({
-      productId: payload.productId,
-      productName: payload.name,
-      price: payload.price,
-      quantity: payload.quantity ?? 1,
-      imageUrl: payload.imageUrl
+      productId,
+      productName,
+      price,
+      quantity: 1,
+      imageUrl
     });
   }
 
@@ -90,18 +103,79 @@ export class CartService {
     this.setItems([]);
   }
 
-  // ---------- Checkout (enregistre en DB via ton backend) ----------
-  checkout(extra?: { customerName?: string; customerEmail?: string }): Observable<any> {
+  // ---------- Checkout ----------
+  checkout(): Observable<CheckoutResponse> {
     const items = this._items$.value;
-    if (!items.length) throw new Error('Cart is empty');
+    if (!items.length) {
+      return throwError(() => new Error('Cart is empty'));
+    }
 
-    const body: CheckoutRequestDto = {
-      items: items.map(i => ({ productId: i.productId, quantity: i.quantity })),
-      customerName: extra?.customerName ?? null,
-      customerEmail: extra?.customerEmail ?? null
+    const currentUser = this.authService.getCurrentUser() as any;
+    if (!currentUser) {
+      return throwError(() => new Error('User not authenticated'));
+    }
+
+    const customerId = currentUser?.userId || currentUser?.id;
+    const customerName = currentUser?.firstName && currentUser?.lastName
+      ? `${currentUser.firstName} ${currentUser.lastName}`
+      : currentUser?.email || currentUser?.username || 'Client';
+    const customerEmail = currentUser?.email || '';
+
+    const totalAmount = this.getCurrentTotal();
+
+    const body: CheckoutRequest = {
+      customerId: customerId,
+      customerName: customerName,
+      customerEmail: customerEmail,
+      totalAmount: totalAmount,
+      shippingAmount: 0,
+      items: items.map(i => ({
+        productId: i.productId,
+        quantity: i.quantity
+      }))
     };
 
-    return this.http.post(`${this.API_URL}/orders/checkout`, body);
+    console.log('📤 Checkout request:', JSON.stringify(body, null, 2));
+
+    const headers = this.getHeaders();
+
+    return this.http.post<CheckoutResponse>(`${this.API_URL}/orders/checkout`, body, { headers })
+      .pipe(
+        catchError((error: HttpErrorResponse) => {
+          console.error('❌ Checkout error:', {
+            status: error.status,
+            error: error.error,
+            message: error.message
+          });
+          return throwError(() => error);
+        })
+      );
+  }
+
+  // ---------- Méthodes utilitaires ----------
+  getCurrentItems(): CartItem[] {
+    return [...this._items$.value];
+  }
+
+  getCurrentTotal(): number {
+    return this._items$.value.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }
+
+  getItemCount(): number {
+    return this._items$.value.reduce((sum, item) => sum + item.quantity, 0);
+  }
+
+  getItemQuantity(productId: number): number {
+    const item = this._items$.value.find(i => i.productId === productId);
+    return item ? item.quantity : 0;
+  }
+
+  hasItems(): boolean {
+    return this._items$.value.length > 0;
+  }
+
+  isEmpty(): boolean {
+    return this._items$.value.length === 0;
   }
 
   // ---------- Storage ----------
@@ -119,5 +193,19 @@ export class CartService {
     } catch {
       return [];
     }
+  }
+
+  // ---------- Headers ----------
+  private getHeaders(): HttpHeaders {
+    const token = this.authService.getToken();
+    if (token) {
+      return new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      });
+    }
+    return new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
   }
 }

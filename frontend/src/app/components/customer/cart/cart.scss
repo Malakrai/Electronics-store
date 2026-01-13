@@ -1,100 +1,457 @@
+// Variables de couleur selon le design global
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$primary-color: #667eea;
+$secondary-color: #764ba2;
+$success-color: #10b981;
+$danger-color: #ef4444;
+$border-color: #e5e7eb;
+$background-light: #f8f9fa;
+$text-dark: #1f2937;
+$text-light: #6b7280;
+
+:host {
+  display: block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
 .cart-page {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 24px;
 }
 
-h1 {
-  margin-bottom: 16px;
+// ==================== HEADER ====================
+.cart-header {
+  text-align: center;
+  margin-bottom: 40px;
+  color: white;
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .subtitle {
+    font-size: 1.1rem;
+    opacity: 0.95;
+    font-weight: 500;
+  }
 }
 
-.error {
-  background: #fee2e2;
+// ==================== ERROR ALERT ====================
+.error-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
   color: #991b1b;
-  padding: 10px 12px;
-  border-radius: 10px;
-  margin-bottom: 12px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+
+  .error-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
 }
 
-.empty {
-  padding: 18px;
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ==================== EMPTY STATE ====================
+.empty-state {
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
+  border-radius: 20px;
+  padding: 60px 30px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.5s ease;
+
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    display: block;
+  }
+
+  h2 {
+    font-size: 1.8rem;
+    color: $text-dark;
+    margin-bottom: 12px;
+  }
+
+  p {
+    color: $text-light;
+    font-size: 1rem;
+    margin-bottom: 30px;
+  }
+
+  .btn-continue-shopping {
+    display: inline-block;
+    background: $primary-gradient;
+    color: white;
+    padding: 14px 32px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+    }
+  }
 }
 
-.cart-list {
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// ==================== CART CONTAINER ====================
+.cart-container {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 30px;
+  animation: fadeIn 0.5s ease;
+
+  @media (max-width: 968px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ==================== CART ITEMS ====================
+.cart-items {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
-.cart-item {
+.cart-item-card {
   display: grid;
-  grid-template-columns: 90px 1fr 140px 120px 120px;
-  gap: 12px;
+  grid-template-columns: 100px 1fr auto auto auto;
+  gap: 20px;
   align-items: center;
   background: white;
-  border: 1px solid #e5e7eb;
   border-radius: 16px;
-  padding: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid $border-color;
+
+  &:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 80px 1fr;
+    gap: 12px;
+
+    .item-quantity,
+    .item-subtotal,
+    .btn-remove {
+      grid-column: 2;
+      margin-top: 12px;
+    }
+  }
 }
 
-.cart-item img {
-  width: 90px;
-  height: 70px;
-  object-fit: cover;
+// ==================== ITEM IMAGE ====================
+.item-image {
+  width: 100px;
+  height: 100px;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  background: $background-light;
+  border: 1px solid $border-color;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (max-width: 768px) {
+    width: 80px;
+    height: 80px;
+  }
 }
 
-.info h3 { margin: 0; }
-.price { margin: 6px 0 0; color: #4b5563; }
+// ==================== ITEM DETAILS ====================
+.item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 
-.qty {
+  .item-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $text-dark;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .item-price {
+    color: $primary-color;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin: 0;
+  }
+}
+
+// ==================== ITEM QUANTITY ====================
+.item-quantity {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $text-light;
+    text-transform: uppercase;
+  }
+
+  .qty-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: $background-light;
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid $border-color;
+  }
+
+  .qty-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: white;
+    color: $primary-color;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover:not(:disabled) {
+      background: $primary-gradient;
+      color: white;
+      transform: scale(1.05);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  .qty-value {
+    min-width: 30px;
+    text-align: center;
+    font-weight: 600;
+    color: $text-dark;
+  }
+}
+
+// ==================== ITEM SUBTOTAL ====================
+.item-subtotal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  text-align: center;
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $text-light;
+    text-transform: uppercase;
+  }
+
+  .price-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0;
+  }
+}
+
+// ==================== REMOVE BUTTON ====================
+.btn-remove {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  color: $danger-color;
+  cursor: pointer;
+  font-size: 1.2rem;
   display: flex;
   align-items: center;
-  gap: 8px;
   justify-content: center;
-}
-.qty button {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  cursor: pointer;
-}
+  transition: all 0.2s ease;
+  font-weight: bold;
 
-.line { font-weight: 700; text-align: right; }
-
-.remove {
-  border: 1px solid #fecaca;
-  background: #fff1f2;
-  color: #9f1239;
-  padding: 8px 10px;
-  border-radius: 12px;
-  cursor: pointer;
+  &:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: $danger-color;
+    transform: scale(1.05);
+  }
 }
 
-.cart-footer {
+// ==================== CART SUMMARY ====================
+.cart-summary {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid $border-color;
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+
+  @media (max-width: 968px) {
+    position: static;
+  }
+}
+
+.summary-header {
+  margin-bottom: 24px;
+
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0;
+  }
+}
+
+.summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
+  padding: 12px 0;
+  color: $text-light;
+  font-size: 0.95rem;
+
+  .free-shipping {
+    color: $success-color;
+    font-weight: 600;
+  }
 }
 
-.actions { display: flex; gap: 10px; }
+.summary-divider {
+  height: 1px;
+  background: $border-color;
+  margin: 16px 0;
+}
 
-.btn {
-  padding: 10px 14px;
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: $text-dark;
+  border-top: 2px solid $border-color;
+  border-bottom: 2px solid $border-color;
+
+  strong {
+    background: $primary-gradient;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.summary-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-clear,
+.btn-checkout {
+  padding: 14px 20px;
+  border: none;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
 }
-.btn.primary { background: #4f46e5; color: white; border-color: #4f46e5; }
-.btn.secondary { background: #f3f4f6; }
-.btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.btn-clear {
+  background: $background-light;
+  color: $text-dark;
+  border: 1px solid $border-color;
+
+  &:hover {
+    background: white;
+    border-color: $primary-color;
+    color: $primary-color;
+  }
+}
+
+.btn-checkout {
+  background: $primary-gradient;
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-continue-shopping-inline {
+  display: block;
+  text-align: center;
+  color: $primary-color;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  margin-top: 12px;
+
+  &:hover {
+    background: $background-light;
+    color: $secondary-color;
+  }
+}

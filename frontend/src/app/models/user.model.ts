@@ -1,17 +1,20 @@
 export interface User {
-  id?: number;
+  id: number;
   email: string;
   userType: string;
   firstName: string;
   lastName: string;
+  roles?: string[];
+  username?: string;
   phone?: string;
   address?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  enabled?: boolean;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
   googleAuthEnabled?: boolean;
-  roles?: string[];
 }
 
+// Keep all your other interfaces as they are
 export interface LoginRequest {
   email: string;
   password: string;

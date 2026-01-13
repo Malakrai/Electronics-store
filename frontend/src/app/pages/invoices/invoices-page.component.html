@@ -1,0 +1,175 @@
+<div class="invoices-container">
+  <div class="page-header">
+    <div>
+      <h1>Mes Factures</h1>
+      <p class="subtitle">Consultez et gérez toutes vos factures</p>
+    </div>
+    <div class="header-stats">
+      <div class="stat-card">
+        <span class="stat-label">Total factures</span>
+        <span class="stat-value">{{ bills.length }}</span>
+      </div>
+      <div class="stat-card pending">
+        <span class="stat-label">En attente</span>
+        <span class="stat-value">{{ getTotalUnpaid() | number:'1.2-2' }} €</span>
+      </div>
+      <div class="stat-card paid">
+        <span class="stat-label">Payées</span>
+        <span class="stat-value">{{ getTotalPaid() | number:'1.2-2' }} €</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtres et recherche -->
+  <div class="filters-section">
+    <div class="search-box">
+      <div class="search-icon">🔍</div>
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()"
+        placeholder="Rechercher par ID, client, montant..."
+        class="search-input"
+      />
+    </div>
+
+    <div class="filter-buttons">
+      <button
+        class="filter-btn"
+        [class.active]="filterStatus === 'ALL'"
+        (click)="onStatusFilterChange('ALL')">
+        Toutes
+      </button>
+      <button
+        class="filter-btn pending"
+        [class.active]="filterStatus === 'PENDING'"
+        (click)="onStatusFilterChange('PENDING')">
+        En attente
+      </button>
+      <button
+        class="filter-btn paid"
+        [class.active]="filterStatus === 'PAID'"
+        (click)="onStatusFilterChange('PAID')">
+        Payées
+      </button>
+      <button
+        class="filter-btn canceled"
+        [class.active]="filterStatus === 'CANCELED'"
+        (click)="onStatusFilterChange('CANCELED')">
+        Annulées
+      </button>
+    </div>
+  </div>
+
+  <!-- État de chargement -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement des factures...</p>
+  </div>
+
+  <!-- Message d'erreur -->
+  <div *ngIf="error && !loading" class="error-state">
+    <div class="error-content">
+      <div class="icon-error">⚠️</div>
+      <div>
+        <p>{{ error }}</p>
+        <button class="btn-retry" (click)="loadBills()">Réessayer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste vide -->
+  <div *ngIf="!loading && !error && filteredBills.length === 0" class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>Aucune facture trouvée</h3>
+    <p *ngIf="searchTerm || filterStatus !== 'ALL'">
+      Essayez de modifier vos critères de recherche
+    </p>
+    <p *ngIf="!searchTerm && filterStatus === 'ALL'">
+      Vous n'avez pas encore de factures
+    </p>
+    <button class="btn-primary" *ngIf="!searchTerm && filterStatus === 'ALL'" routerLink="/checkout">
+      Créer une commande
+    </button>
+  </div>
+
+  <!-- Liste des factures -->
+  <div *ngIf="!loading && !error && filteredBills.length > 0" class="invoices-list">
+    <div class="table-responsive">
+      <table class="invoices-table">
+        <thead>
+        <tr>
+          <th>N° Facture</th>
+          <th>Date</th>
+          <th>Client</th>
+          <th>Statut</th>
+          <th>Montant</th>
+          <th class="actions-header">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let bill of filteredBills">
+          <td class="invoice-number">
+            <span class="number-badge">#{{ bill.id }}</span>
+          </td>
+          <td class="invoice-date">
+            {{ getFormattedDate(bill.billDate) || '-' }}
+          </td>
+          <td class="invoice-customer">
+            <div class="customer-info">
+              <!-- Use safe method to get customer info -->
+              <div class="customer-name">
+                {{ getCustomerDisplayName(bill) }}
+              </div>
+              <div class="customer-email">
+                {{ getCustomerEmail(bill) }}
+              </div>
+            </div>
+          </td>
+          <td class="invoice-status">
+              <span class="status-badge" [class]="getStatusClass(bill.status)">
+                {{ getStatusText(bill.status) }}
+              </span>
+          </td>
+          <td class="invoice-amount">
+            <span class="amount">{{ toNumber(bill.totalAmount) | number:'1.2-2' }} €</span>
+          </td>
+          <td class="invoice-actions">
+            <div class="action-buttons">
+              <a [routerLink]="['/invoice', bill.id]" class="action-btn view" title="Voir">
+                <span>👁️</span>
+              </a>
+              <button class="action-btn download" (click)="downloadPdf(bill.id)" title="Télécharger PDF">
+                <span>📄</span>
+              </button>
+              <a *ngIf="bill.status === 'PENDING'" routerLink="/checkout" class="action-btn pay" title="Payer">
+                <span>💳</span>
+              </a>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination et résumé -->
+    <div class="list-footer">
+      <div class="summary">
+        Affichage de <strong>{{ filteredBills.length }}</strong> facture{{ filteredBills.length > 1 ? 's' : '' }}
+        sur <strong>{{ bills.length }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions rapides -->
+  <div *ngIf="!loading && !error" class="quick-actions">
+    <button class="btn-secondary" routerLink="/checkout">
+      <span>➕</span>
+      Nouvelle commande
+    </button>
+    <button class="btn-outline" (click)="loadBills()">
+      <span>🔄</span>
+      Actualiser
+    </button>
+  </div>
+</div>

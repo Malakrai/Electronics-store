@@ -1,29 +1,419 @@
-.stats-container {
-  padding: 2rem;
+/* ==================== GLOBAL ==================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+:host {
+  display: block;
+  min-height: 100vh;
 }
 
-.stat-card {
-  background: #ffffff;
-  padding: 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+/* Background gradient + particles (same as catalog) */
+:host::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  z-index: -2;
+}
+
+:host::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 135, 135, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(99, 179, 237, 0.3) 0%, transparent 50%);
+  animation: moveParticles 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes moveParticles {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+/* ==================== FIXED HEADER BUTTONS (same as catalog) ==================== */
+.open-sidebar-btn,
+.login-btn {
+  position: fixed;
+  z-index: 1000;
+  padding: 12px 24px;
+  border-radius: 50px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  backdrop-filter: blur(20px);
+}
+
+.open-sidebar-btn {
+  top: 20px;
+  left: 30px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.open-sidebar-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.login-btn {
+  top: 20px;
+  right: 30px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.login-btn:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* ==================== PAGE LAYOUT ==================== */
+.stats-page {
+  padding: 120px 30px 60px;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.stats-header {
   text-align: center;
+  margin-bottom: 35px;
+  animation: fadeInDown 0.8s ease;
 }
 
-.stat-value {
-  font-size: 48px;
-  font-weight: bold;
-  margin-top: 0.5rem;
-  color: #007bff;
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
+
+.stats-header h1 {
+  font-size: 3.2rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -1px;
+}
+
+.subtitle {
+  color: rgba(255,255,255,0.85);
+  font-weight: 600;
+}
+
+/* Filters row (same vibe as catalog selects) */
+.filters-row {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 25px;
+}
+
+.filters-row select {
+  padding: 14px 40px 14px 20px;
+  border-radius: 50px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+}
+
+.filters-row select:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.2);
+}
+
+.refresh-btn {
+  padding: 14px 28px;
+  border-radius: 50px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.refresh-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+}
+
+/* ==================== ALERT / LOADING ==================== */
+.alert {
+  margin: 20px auto 0;
+  max-width: 900px;
+  padding: 18px 22px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #f5576c;
+  font-weight: 700;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.loading-card {
+  text-align: center;
+  margin-top: 30px;
+  padding: 40px 30px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 25px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  color: #333;
+  font-weight: 700;
+}
+
+/* ==================== KPI GRID ==================== */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  gap: 18px;
+  margin: 25px 0 25px;
+}
+
+.kpi-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 25px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  transition: all 0.35s ease;
+  overflow: hidden;
+}
+
+.kpi-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 30px 80px rgba(102, 126, 234, 0.35);
+}
+
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.18) 0%, transparent 70%);
+  animation: rotate 18s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.kpi-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #555;
+}
+
+.kpi-value {
+  margin-top: 10px;
+  font-size: 2.1rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.kpi-hint {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: #777;
+  font-weight: 600;
+}
+
+.kpi-metrics {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  color: #444;
+}
+
+.metric-val.up { color: #11998e; }
+.metric-val.down { color: #f5576c; }
+
+/* ==================== CHARTS GRID ==================== */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.chart-card,
+.table-card,
+.top-products-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 25px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.chart-card h3,
+.table-card h3,
+.top-products-card h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 14px;
+}
+
 .chart-container {
   width: 100%;
-  max-width: 700px;
-  margin: 30px auto;
+  height: 320px;
+}
+
+.table-wrap {
+  overflow: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(102, 126, 234, 0.15);
+}
+
+/* ==================== TABLE ==================== */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 520px;
+}
+
+.table th, .table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 0.95rem;
+}
+
+.table th {
+  text-align: left;
+  color: #555;
+  font-weight: 800;
+  background: rgba(102, 126, 234, 0.08);
+}
+
+.table td.num, .table th.num {
+  text-align: right;
+  font-weight: 800;
+  color: #333;
+}
+
+.muted {
+  text-align: center;
+  color: #777;
+  font-weight: 700;
+}
+
+/* ==================== TOP PRODUCTS TABS ==================== */
+.top-products-card {
+  margin-top: 18px;
+}
+
+.top-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.tab {
+  padding: 10px 16px;
+  border-radius: 50px;
+  border: 2px solid #667eea;
+  background: white;
+  color: #667eea;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.tab:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.tab.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
+  .chart-container { height: 280px; }
+}
+
+@media (max-width: 768px) {
+  .stats-page {
+    padding: 100px 20px 40px;
+  }
+
+  .stats-header h1 { font-size: 2.4rem; }
+
+  .open-sidebar-btn,
+  .login-btn {
+    padding: 10px 20px;
+    font-size: 0.85rem;
+  }
+
+  .open-sidebar-btn { left: 15px; top: 15px; }
+  .login-btn { right: 15px; top: 15px; }
+
+  .filters-row { flex-direction: column; }
+  .filters-row select, .refresh-btn { width: 100%; }
 }

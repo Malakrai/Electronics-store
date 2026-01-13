@@ -1,0 +1,125 @@
+<div class="page">
+  <div class="card">
+    <div class="top">
+      <h2>Détail commande #{{ orderId }}</h2>
+      <button (click)="debugData()" class="btn btn-sm btn-outline">Afficher</button>
+      <a routerLink="/orders" class="btn outline">← Mes commandes</a>
+    </div>
+
+    <!-- Loading state -->
+    <div *ngIf="loading" class="loading">
+      <div class="spinner"></div>
+      <span>Chargement de la commande...</span>
+    </div>
+
+    <!-- Error state -->
+    <div *ngIf="error && !loading" class="error-alert">
+      <div>❌ {{ errorMessage || 'Impossible de charger la commande.' }}</div>
+      <button class="btn btn-sm" (click)="loadOrder()">Réessayer</button>
+    </div>
+
+    <!-- Success state -->
+    <div *ngIf="!loading && !error && bill">
+
+      <!-- En-tête de la commande -->
+      <div class="order-header">
+        <div class="header-grid">
+          <div class="header-item">
+            <div class="label">Référence</div>
+            <div class="value">{{ bill.referenceNumber || 'N/A' }}</div>
+          </div>
+
+          <div class="header-item">
+            <div class="label">Date</div>
+            <div class="value">{{ getFormattedDate(bill.billDate) }}</div>
+          </div>
+
+          <div class="header-item">
+            <div class="label">Statut</div>
+            <div [class]="getStatusClass(bill.status)" class="status-badge">
+              {{ getStatusText(bill.status) }}
+            </div>
+          </div>
+
+          <div class="header-item">
+            <div class="label">Total</div>
+            <div class="value total-amount">{{ formatCurrency(bill.totalAmount) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informations client -->
+      <div class="customer-section" *ngIf="bill.customer">
+        <h3>Informations client</h3>
+        <div class="customer-grid">
+          <div class="customer-item">
+            <div class="label">Nom</div>
+            <div class="value">{{ getCustomerName() }}</div>
+          </div>
+
+          <div class="customer-item" *ngIf="bill.customer.email">
+            <div class="label">Email</div>
+            <div class="value">{{ bill.customer.email }}</div>
+          </div>
+
+          <div class="customer-item" *ngIf="bill.customer.phone">
+            <div class="label">Téléphone</div>
+            <div class="value">{{ bill.customer.phone }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Articles de la commande -->
+      <div class="items-section">
+        <h3>Articles ({{ getItems().length }})</h3>
+
+        <div *ngIf="getItems().length === 0" class="no-items">
+          Aucun article dans cette commande.
+        </div>
+
+        <table *ngIf="getItems().length > 0" class="items-table">
+          <thead>
+          <tr>
+            <th>Description</th>
+            <th class="text-right">Quantité</th>
+            <th class="text-right">Prix unitaire</th>
+            <th class="text-right">Total</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let item of getItems(); let i = index">
+            <td>{{ item.description || 'Article ' + (i + 1) }}</td>
+            <td class="text-right">{{ item.quantity || 1 }}</td>
+            <td class="text-right">{{ formatCurrency(item.unitPrice) }}</td>
+            <td class="text-right">{{ formatCurrency(item.lineTotal) }}</td>
+          </tr>
+          </tbody>
+          <tfoot>
+          <tr>
+            <td colspan="3" class="text-right">Sous-total:</td>
+            <td class="text-right">{{ formatCurrency(bill.totalAmount - (bill.taxAmount || 0)) }}</td>
+          </tr>
+          <tr>
+            <td colspan="3" class="text-right">TVA (20%):</td>
+            <td class="text-right">{{ formatCurrency(bill.taxAmount) }}</td>
+          </tr>
+          <tr>
+            <td colspan="3" class="text-right"><strong>Total:</strong></td>
+            <td class="text-right"><strong>{{ formatCurrency(bill.totalAmount) }}</strong></td>
+          </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button class="btn secondary" (click)="backToOrders()">
+          ← Retour aux commandes
+        </button>
+        <button class="btn primary" (click)="printInvoice()">
+          📄 Imprimer la facture
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

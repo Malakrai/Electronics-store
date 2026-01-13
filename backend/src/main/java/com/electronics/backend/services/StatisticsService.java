@@ -1,11 +1,11 @@
 package com.electronics.backend.services;
+
 import com.electronics.backend.repository.StatisticsRepository;
-
-
-
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.Map;
+
 @Service
 public class StatisticsService {
 
@@ -15,41 +15,32 @@ public class StatisticsService {
         this.repo = repo;
     }
 
-    // ===========================
-    // MAPPED LISTS (NO MORE DTOs)
-    // ===========================
-    public List<Map<String, Object>> getTopProducts() {
-        return repo.getTopProducts();
-    }
+    // ===== KPI =====
+    public long getTotalOrders() { return repo.getTotalOrders(); }
+    public long getTotalOrdersByYear(int year) { return repo.getTotalOrdersByYear(year); }
 
-    public List<Map<String, Object>> getRevenueByMonth() {
-        return repo.getRevenueByMonth();
-    }
+    public long getTotalCustomers() { return repo.getTotalCustomers(); }
 
-    public List<Map<String, Object>> getStatsByCategory() {
-        return repo.getStatsByCategory();
-    }
+    public double getTotalRevenue() { return repo.getTotalRevenue(); }
+    public double getTotalRevenueByYear(int year) { return repo.getTotalRevenueByYear(year); }
 
-    public List<Map<String, Object>> getOrderCountByMonth() {
-        return repo.getOrderCountByMonth();
-    }
+    public double getItemsPerOrder() { return repo.getItemsPerOrder(); }
 
-    public List<Map<String, Object>> getTopClients() {
-        return repo.getTopClients();
-    }
+    // ===== TIME =====
+    public List<Map<String, Object>> getRevenueByMonth(Integer year) { return repo.getRevenueByMonth(year); }
+    public List<Map<String, Object>> getOrdersPerMonth(Integer year) { return repo.getOrderCountByMonth(year); }
 
-    // ===========================
-    // SIMPLE NUMERIC ENDPOINTS
-    // ===========================
-    public long getTotalOrders() {
-        return repo.getTotalOrders();
-    }
+    // ===== PRODUCTS =====
+    public List<Map<String, Object>> getTopProductsOverall(int limit) { return repo.getTopProductsOverall(limit); }
+    public List<Map<String, Object>> getTopProductsByMonth(String month, int limit) { return repo.getTopProductsByMonth(month, limit); }
+    public List<Map<String, Object>> getTopProductsByYear(int year, int limit) { return repo.getTopProductsByYear(year, limit); }
+    public List<Map<String, Object>> getTopProductsByRevenue(int limit) { return repo.getTopProductsByRevenue(limit); }
 
-    public long getTotalCustomers() {
-        return repo.getTotalCustomers();
-    }
+    // ===== CLIENTS =====
+    public List<Map<String, Object>> getTopClients(int limit) { return repo.getTopClients(limit); }
 
-    public double getTotalRevenue() {
-        return repo.getTotalRevenue();
-    }
+    // ===== CATEGORY =====
+    public List<Map<String, Object>> getRevenueByCategory(Integer year) { return repo.getRevenueByCategory(year); }
+    public List<Map<String, Object>> getMarginByCategory(Integer year) { return repo.getMarginByCategory(year); }
+    public List<Map<String, Object>> getCategoryShare(Integer year) { return repo.getCategoryShare(year); }
 }

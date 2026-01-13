@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { ApiService } from '../../../services/api.service';
+import { StatisticsService } from '../../../services/statistics.service';
 import { User } from '../../../models/user.model';
 
 @Component({
@@ -19,7 +20,11 @@ export class AdminDashboardComponent implements OnInit {
     totalUsers: 0,
     totalProducts: 0,
     totalOrders: 0,
-    activeUsers: 0
+    activeUsers: 0,
+    totalRevenue: 0,
+    pendingOrders: 0,
+    lowStockProducts: 0,
+    monthlyGrowth: 0
   };
 
   isLoading = true;
@@ -27,42 +32,124 @@ export class AdminDashboardComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private apiService: ApiService,
+    private statisticsService: StatisticsService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-    this.loadStats();
+    this.loadRealStats();
   }
 
-  loadStats(): void {
+  loadRealStats(): void {
     this.isLoading = true;
 
-    this.apiService.getUsers().subscribe({
-      next: (users) => {
-        this.stats.totalUsers = users.length;
+    // Charger les vraies statistiques
+    this.loadUsersStats();
+    this.loadProductsStats();
+    this.loadOrdersStats();
+    this.loadRevenueStats();
+  }
 
-        // ✔ Correction : on vérifie si enabled existe
-        this.stats.activeUsers = users.filter(
-          (user: User) => (user as any).enabled === true
-        ).length;
+  private loadUsersStats(): void {
+    // Utiliser le service de statistiques pour le nombre total de clients
+    this.statisticsService.getTotalCustomers().subscribe({
+      next: (totalCustomers) => {
+        this.stats.totalUsers = totalCustomers;
 
-        this.isLoading = false;
+        // Pour les utilisateurs actifs, on peut utiliser l'API users
+        this.apiService.getUsers().subscribe({
+          next: (users) => {
+            // Mettre à jour aussi le nombre total d'utilisateurs si différent
+            if (users.length > totalCustomers) {
+              this.stats.totalUsers = users.length;
+            }
+
+            this.stats.activeUsers = users.filter(
+              (user: any) => user.enabled === true || user.active === true
+            ).length;
+
+            this.checkLoadingComplete();
+          },
+          error: () => {
+            this.checkLoadingComplete();
+          }
+        });
       },
-      error: (error) => {
-        console.error('Error loading stats:', error);
-        this.isLoading = false;
+      error: () => {
+        // Fallback sur l'API users si le service stats échoue
+        this.apiService.getUsers().subscribe({
+          next: (users) => {
+            this.stats.totalUsers = users.length;
+            this.stats.activeUsers = users.filter(
+              (user: any) => user.enabled === true || user.active === true
+            ).length;
+            this.checkLoadingComplete();
+          },
+          error: () => {
+            this.checkLoadingComplete();
+          }
+        });
       }
     });
+  }
 
+  private loadProductsStats(): void {
     this.apiService.getProducts().subscribe({
       next: (products) => {
         this.stats.totalProducts = products.length;
+        this.stats.lowStockProducts = products.filter(
+          (product: any) => product.stock < 10
+        ).length;
+        this.checkLoadingComplete();
       },
-      error: (error) => {
-        console.error('Error loading products:', error);
+      error: () => {
+        this.checkLoadingComplete();
       }
     });
+  }
+
+  private loadOrdersStats(): void {
+    this.statisticsService.getTotalOrders().subscribe({
+      next: (totalOrders) => {
+        this.stats.totalOrders = totalOrders;
+        this.checkLoadingComplete();
+      },
+      error: () => {
+        // Fallback: estimer le nombre de commandes du mois
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
+
+        // Si vous avez une API pour les commandes, utilisez-la
+        // Sinon, on garde la valeur actuelle
+        this.checkLoadingComplete();
+      }
+    });
+  }
+
+  private loadRevenueStats(): void {
+    this.statisticsService.getTotalRevenue().subscribe({
+      next: (totalRevenue) => {
+        this.stats.totalRevenue = totalRevenue;
+        this.checkLoadingComplete();
+      },
+      error: () => {
+        this.checkLoadingComplete();
+      }
+    });
+  }
+
+  private checkLoadingComplete(): void {
+    // Vérifier si toutes les données sont chargées
+    if (this.stats.totalUsers > 0 || this.stats.totalProducts > 0) {
+      this.isLoading = false;
+    }
+
+    // Timeout de sécurité
+    setTimeout(() => {
+      this.isLoading = false;
+    }, 3000);
   }
 
   logout(): void {
@@ -70,12 +157,11 @@ export class AdminDashboardComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-
-  goToUsersCrud() {
-      this.router.navigate(['/admin/users']);
+  goToUsersCrud(): void {
+    this.router.navigate(['/admin/users']);
   }
 
-  manageProducts(): void {
-    console.log('Navigate to product management');
+  statistiques(): void {
+    this.router.navigate(['/admin/statistics']);
   }
 }

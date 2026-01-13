@@ -3,7 +3,6 @@ import { AuthGuard } from './guards/auth.guard';
 import { RoleGuard } from './guards/role.guard';
 
 export const routes: Routes = [
-
   /* =====================
      REDIRECTION PAR DÉFAUT
   ====================== */
@@ -28,6 +27,12 @@ export const routes: Routes = [
       import('./components/auth/register/register')
         .then(m => m.RegisterComponent)
   },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./components/forgot-password/forgot-password')
+        .then(m => m.ForgotPasswordComponent)
+  },
 
   /* =====================
      ROUTES PUBLIQUES (CUSTOMER)
@@ -46,6 +51,53 @@ export const routes: Routes = [
   },
 
   /* =====================
+     CHECKOUT & FACTURATION
+  ====================== */
+  {
+    path: 'checkout',
+    loadComponent: () =>
+      import('./pages/checkout/checkout-page.component')
+        .then(m => m.CheckoutPageComponent)
+  },
+  {
+    path: 'checkout/:orderId',
+    loadComponent: () =>
+      import('./pages/checkout/checkout-page.component')
+        .then(m => m.CheckoutPageComponent)
+  },
+  {
+    path: 'confirmation/:billId',
+    loadComponent: () =>
+      import('./pages/confirmation/confirmation-page.component')
+        .then(m => m.ConfirmationPageComponent)
+  },
+  {
+    path: 'orders',
+    loadComponent: () =>
+      import('./pages/orders/orders-page.component')
+        .then(m => m.OrdersPageComponent)
+  },
+  {
+    path: 'orders/:orderId',
+    loadComponent: () =>
+      import('./pages/order-details/order-details-page.component')
+        .then(m => m.OrderDetailsPageComponent)
+  },
+
+  {
+    path: 'invoices',
+    loadComponent: () =>
+      import('./pages/invoices/invoices-page.component')
+        .then(m => m.InvoicesPageComponent)
+  },
+  {
+    path: 'invoice/:id',
+    loadComponent: () =>
+      import('./pages/invoice-view/invoice-view-page.component')
+        .then(m => m.InvoiceViewPageComponent)
+  },
+
+  /* =====================
      CUSTOMER (LOGIN OBLIGATOIRE)
   ====================== */
   {
@@ -57,22 +109,13 @@ export const routes: Routes = [
     data: { roles: ['CUSTOMER'] }
   },
   {
-      path: 'customer/delivery',
-      loadComponent: () =>
-        import('./components/customer/delivery/delivery.component')
-          .then(m => m.DeliveryComponent),
-      canActivate: [AuthGuard, RoleGuard],
-      data: { roles: ['CUSTOMER'] }
-    },
-  {
-        path: 'customer/billing',
-        loadComponent: () =>
-          import('./components/customer/billing/billing')
-            .then(m => m.BillingComponent),
-        canActivate: [AuthGuard, RoleGuard],
-        data: { roles: ['CUSTOMER'] }
-      },
-
+    path: 'customer/delivery',
+    loadComponent: () =>
+      import('./components/customer/delivery/delivery.component')
+        .then(m => m.DeliveryComponent),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['CUSTOMER'] }
+  },
   /* =====================
      ADMIN
   ====================== */
@@ -101,7 +144,6 @@ export const routes: Routes = [
     data: { roles: ['ADMIN'] }
   },
 
-
   /* =====================
      MAGASINIER
   ====================== */
@@ -121,7 +163,14 @@ export const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['MAGASINIER'] }
   },
-
+  {
+    path: 'magasinier/commandes',
+    loadComponent: () =>
+      import('./components/magasinier/magasinier-orders/magasinier-orders')
+        .then(m => m.MagasinierOrders),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['MAGASINIER'] }
+  },
 
   /* =====================
      404
